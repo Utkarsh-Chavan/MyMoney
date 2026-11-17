@@ -1,0 +1,92 @@
+<section class="security-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">KEEP YOUR DATA UNDER YOUR CONTROL</p>
+      <h1>Security &amp; backup</h1>
+      <p class="page-subtitle">Protect access on this device and create encrypted backups you can move offline.</p>
+    </div>
+  </header>
+
+  @if (error()) { <div class="security-alert security-alert-error" role="alert">{{ error() }}</div> }
+  @if (message()) { <div class="security-alert security-alert-success" role="status">{{ message() }}</div> }
+
+  <section class="security-panel">
+    <div class="security-panel-heading">
+      <span class="security-panel-icon"><svg lucideLock aria-hidden="true"></svg></span>
+      <div><h2>Application lock</h2><p>A passphrase gate for opening MyMoney on this device.</p></div>
+      <span class="security-status" [class.security-status-on]="lockService.configured()">
+        {{ lockService.configured() ? 'Enabled' : 'Disabled' }}
+      </span>
+    </div>
+
+    @if (lockService.configured()) {
+      <div class="security-actions-row">
+        <div><strong>Lock this app now</strong><p>MyMoney will ask for the configured passphrase before showing its screens again.</p></div>
+        <button class="button button-outline" type="button" (click)="lockNow()"><svg lucideLock aria-hidden="true"></svg>Lock now</button>
+      </div>
+
+      <form class="security-form" (ngSubmit)="changeLockPassphrase()">
+        <div class="security-form-title"><h3>Change passphrase</h3><p>Verify the current passphrase before choosing a new one.</p></div>
+        <div class="security-fields">
+          <label><span class="field-label">Current passphrase</span><input class="text-field" type="password" name="currentPassphrase" [(ngModel)]="currentPassphrase" autocomplete="current-password" required /></label>
+          <label><span class="field-label">New passphrase</span><input class="text-field" type="password" name="replacementPassphrase" [(ngModel)]="replacementPassphrase" autocomplete="new-password" minlength="12" maxlength="1024" required /></label>
+          <label><span class="field-label">Confirm new passphrase</span><input class="text-field" type="password" name="confirmReplacementPassphrase" [(ngModel)]="confirmReplacementPassphrase" autocomplete="new-password" minlength="12" maxlength="1024" required /></label>
+        </div>
+        <button class="button button-light" type="submit" [disabled]="busy()">Change passphrase</button>
+      </form>
+
+      <form class="security-form security-disable-form" (ngSubmit)="disableLock()">
+        <div class="security-form-title"><h3>Disable application lock</h3><p>Verify the current passphrase to remove the local lock.</p></div>
+        <div class="security-inline-form">
+          <input class="text-field" type="password" name="disablePassphrase" [(ngModel)]="disablePassphrase" autocomplete="current-password" placeholder="Current passphrase" required />
+          <button class="button button-outline" type="submit" [disabled]="busy()">Disable lock</button>
+        </div>
+      </form>
+    } @else {
+      <form class="security-form" (ngSubmit)="enableLock()">
+        <div class="security-form-title"><h3>Enable application lock</h3><p>Use a unique passphrase with at least 12 characters.</p></div>
+        <div class="security-fields">
+          <label><span class="field-label">New passphrase</span><input class="text-field" type="password" name="enablePassphrase" [(ngModel)]="enablePassphrase" autocomplete="new-password" minlength="12" maxlength="1024" required /></label>
+          <label><span class="field-label">Confirm passphrase</span><input class="text-field" type="password" name="confirmEnablePassphrase" [(ngModel)]="confirmEnablePassphrase" autocomplete="new-password" minlength="12" maxlength="1024" required /></label>
+        </div>
+        <button class="button button-primary" type="submit" [disabled]="busy()">Enable lock</button>
+      </form>
+    }
+
+    <div class="security-caveat"><svg lucideShieldCheck aria-hidden="true"></svg><p><strong>Important limitation</strong> This client-side lock is a privacy convenience, not encryption of the IndexedDB database. It cannot protect data from someone with unrestricted access to this browser profile, developer tools, or the running device.</p></div>
+  </section>
+
+  <section class="security-panel">
+    <div class="security-panel-heading">
+      <span class="security-panel-icon"><svg lucideDownload aria-hidden="true"></svg></span>
+      <div><h2>Export encrypted backup</h2><p>Download a portable, password-encrypted copy of your local data.</p></div>
+    </div>
+    <form class="security-form" (ngSubmit)="exportBackup()">
+      <div class="security-fields">
+        <label><span class="field-label">Backup passphrase</span><input class="text-field" type="password" name="exportPassphrase" [(ngModel)]="exportPassphrase" autocomplete="new-password" minlength="12" maxlength="1024" required /></label>
+        <label><span class="field-label">Confirm backup passphrase</span><input class="text-field" type="password" name="confirmExportPassphrase" [(ngModel)]="confirmExportPassphrase" autocomplete="new-password" minlength="12" maxlength="1024" required /></label>
+      </div>
+      <button class="button button-primary" type="submit" [disabled]="busy()"><svg lucideDownload aria-hidden="true"></svg>{{ busy() ? 'Preparing…' : 'Download encrypted backup' }}</button>
+    </form>
+    <div class="security-caveat"><svg lucideKeyRound aria-hidden="true"></svg><p><strong>Keep the backup passphrase safe.</strong> It is not stored by MyMoney and cannot be recovered. Losing it means the backup cannot be decrypted. The device-local application lock is intentionally not exported; database settings and your theme preference are included.</p></div>
+    <p class="security-footnote">Backup files use the <code>.mmbak</code> extension. The browser does not reliably report when or where a download is saved, so MyMoney does not display a last-backup date.</p>
+  </section>
+
+  <section class="security-panel">
+    <div class="security-panel-heading">
+      <span class="security-panel-icon"><svg lucideUpload aria-hidden="true"></svg></span>
+      <div><h2>Restore encrypted backup</h2><p>Validate and decrypt the file before confirming full replacement.</p></div>
+    </div>
+    <div class="security-restore-form">
+      <label class="field-label" for="restore-file">Encrypted backup file</label>
+      <input id="restore-file" class="text-field security-file-input" type="file" accept=".mmbak,application/vnd.mymoney.backup+json" (change)="onBackupFileSelected($event)" />
+      @if (selectedFile(); as file) { <p class="security-file-selected">Selected: {{ file.name }} · {{ (file.size / 1024) | number:'1.0-0' }} KB</p> }
+      <label class="field-label" for="restore-passphrase">Backup passphrase</label>
+      <input id="restore-passphrase" class="text-field" type="password" name="restorePassphrase" [(ngModel)]="restorePassphrase" autocomplete="current-password" minlength="12" maxlength="1024" required />
+      <button class="button button-outline security-restore-button" type="button" [disabled]="busy() || !selectedFile()" (click)="restoreBackup()">
+        <svg lucideUpload aria-hidden="true"></svg>{{ busy() ? 'Validating / restoring…' : 'Validate and restore' }}
+      </button>
+    </div>
+    <div class="security-caveat security-caveat-warning"><svg lucideShieldCheck aria-hidden="true"></svg><p><strong>Restore replaces all local financial data.</strong> Accounts, transactions, ledger entries, loans, budgets, savings records, and database settings will be replaced together. MyMoney validates the entire backup and asks for confirmation before writing. The device-local application lock remains unchanged.</p></div>
+  </section>
+</section>

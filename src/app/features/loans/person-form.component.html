@@ -1,0 +1,45 @@
+<section class="loan-form-page">
+  <a class="back-link" routerLink="/loans"><svg lucideArrowLeft aria-hidden="true"></svg>Back to loans</a>
+  <div class="loan-form-layout">
+    <aside class="loan-form-intro">
+      <p class="eyebrow">PEOPLE</p>
+      <h1>{{ editing() ? 'Edit person' : 'Add a person' }}</h1>
+      <p>Keep a simple contact record for the people connected to your loans and debts.</p>
+      <div class="loan-private-note">
+        <svg lucideCircleCheck aria-hidden="true"></svg>
+        <span>Only add details you need. No banking credentials or account passwords are stored.</span>
+      </div>
+    </aside>
+
+    @if (loading()) {
+      <div class="loan-form-card" role="status">Loading person…</div>
+    } @else {
+      <form class="loan-form-card" [formGroup]="form" (ngSubmit)="save()">
+        @if (error()) {
+          <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+        }
+
+        <div class="loan-form-section">
+          <h2>Person details</h2>
+          <p>People can be archived later without removing their financial history.</p>
+        </div>
+
+        <label class="field-label" for="person-name">Name <span>*</span></label>
+        <input id="person-name" class="text-field" formControlName="name" maxlength="100" autocomplete="name" required />
+
+        <label class="field-label" for="person-phone">Phone number <span class="optional-label">Optional</span></label>
+        <input id="person-phone" class="text-field" type="tel" formControlName="phoneNumber" maxlength="50" autocomplete="tel" />
+
+        <label class="field-label" for="person-notes">Notes <span class="optional-label">Optional</span></label>
+        <textarea id="person-notes" class="text-field loan-notes-field" formControlName="notes" maxlength="2000" rows="5"></textarea>
+
+        <div class="account-form-actions">
+          <a class="button button-outline" routerLink="/loans">Cancel</a>
+          <button class="button button-primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : editing() ? 'Save changes' : 'Add person' }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</section>

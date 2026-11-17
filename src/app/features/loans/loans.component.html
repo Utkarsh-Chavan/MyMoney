@@ -1,0 +1,181 @@
+<section class="loans-page">
+  <header class="page-heading loans-heading">
+    <div>
+      <p class="eyebrow">PERSONAL FINANCES</p>
+      <h1>Loans &amp; debts</h1>
+      <p class="page-subtitle">Track money lent and borrowed, with every repayment recorded locally.</p>
+    </div>
+    <div class="loans-actions">
+      <a class="button button-outline" routerLink="/loans/people/new">Add person</a>
+      <a class="button button-primary" routerLink="/loans/new">
+        <svg lucidePlus aria-hidden="true"></svg>Record a loan
+      </a>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+  }
+
+  <section class="loan-metrics" aria-label="Loan summary">
+    <article class="loan-metric-card loan-metric-receivable">
+      <span>Outstanding receivables</span>
+      <strong>{{ formatMoney(dashboard().receivablePaise) }}</strong>
+      <small>Money owed to you</small>
+    </article>
+    <article class="loan-metric-card loan-metric-payable">
+      <span>Outstanding payables</span>
+      <strong>{{ formatMoney(dashboard().payablePaise) }}</strong>
+      <small>Money you owe</small>
+    </article>
+    <article class="loan-metric-card">
+      <span>Total lent</span>
+      <strong>{{ formatMoney(dashboard().totalLentPaise) }}</strong>
+      <small>Original principal</small>
+    </article>
+    <article class="loan-metric-card">
+      <span>Total borrowed</span>
+      <strong>{{ formatMoney(dashboard().totalBorrowedPaise) }}</strong>
+      <small>Original principal</small>
+    </article>
+  </section>
+
+  <section class="loan-status-strip" aria-label="Loan statuses">
+    <span><strong>{{ dashboard().settledCount }}</strong> settled</span>
+    <span><strong>{{ dashboard().partiallyRepaidCount }}</strong> partially repaid</span>
+    <span><strong>{{ dashboard().overdueCount }}</strong> overdue</span>
+    <span><strong>{{ dashboard().outstandingCount }}</strong> with a balance</span>
+    @if (dashboard().needsReviewCount > 0) {
+      <span><strong>{{ dashboard().needsReviewCount }}</strong> need review</span>
+    }
+  </section>
+
+  <form class="loan-filter-panel" [formGroup]="filters" (ngSubmit)="applyFilters()">
+    <div class="loan-section-heading">
+      <div>
+        <h2>Loan history</h2>
+        <p>{{ totalItems() }} {{ totalItems() === 1 ? 'loan' : 'loans' }}</p>
+      </div>
+      <a class="loan-text-link" routerLink="/loans/people/new">Manage people</a>
+    </div>
+    <div class="loan-filter-grid">
+      <label>
+        <span>Person</span>
+        <select formControlName="personId">
+          <option value="">All people</option>
+          @for (person of people(); track person.id) {
+            <option [value]="person.id">{{ person.name }}{{ person.status === 'archived' ? ' · Archived' : '' }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Direction</span>
+        <select formControlName="direction">
+          <option value="all">All directions</option>
+          <option value="lent">Money lent</option>
+          <option value="borrowed">Money borrowed</option>
+        </select>
+      </label>
+      <label>
+        <span>Status</span>
+        <select formControlName="status">
+          <option value="all">All statuses</option>
+          <option value="open">Open</option>
+          <option value="partially-repaid">Partially repaid</option>
+          <option value="settled">Settled</option>
+          <option value="overdue">Overdue</option>
+          <option value="needs-review">Needs review</option>
+        </select>
+      </label>
+      <label>
+        <span>From date</span>
+        <input type="date" formControlName="fromDate" />
+      </label>
+      <label>
+        <span>To date</span>
+        <input type="date" formControlName="toDate" />
+      </label>
+      <div class="loan-filter-actions">
+        <button class="button button-outline" type="button" (click)="clearFilters()">Clear</button>
+        <button class="button button-primary" type="submit">Apply</button>
+      </div>
+    </div>
+  </form>
+
+  <section class="loan-list-panel" aria-label="Loan list">
+    @if (loading()) {
+      <div class="loan-empty-state" role="status">Loading loan history…</div>
+    } @else if (items().length === 0) {
+      <div class="loan-empty-state">
+        <span class="loan-empty-symbol"><svg lucideArrowLeftRight aria-hidden="true"></svg></span>
+        <h2>No loans recorded yet</h2>
+        <p>Add a person, then record money you lend or borrow. It will update account balances without affecting income or expenses.</p>
+        <a class="button button-primary" routerLink="/loans/new">Record your first loan</a>
+      </div>
+    } @else {
+      <div class="loan-table-head">
+        <span>Person and direction</span>
+        <span>Account</span>
+        <span>Started</span>
+        <span>Status</span>
+        <span class="loan-amount-cell">Outstanding</span>
+      </div>
+      <div class="loan-rows">
+        @for (summary of items(); track summary.loan.id) {
+          <a class="loan-row" [routerLink]="['/loans', summary.loan.id]">
+            <span class="loan-person-cell">
+              <span class="loan-direction-icon" [class.loan-direction-receivable]="summary.loan.direction === 'lent'">
+                @if (summary.loan.direction === 'lent') {
+                  <svg lucideArrowDownRight aria-hidden="true"></svg>
+                } @else {
+                  <svg lucideArrowUpRight aria-hidden="true"></svg>
+                }
+              </span>
+              <span>
+                <strong>{{ personName(summary) }}</strong>
+                <small>{{ directionLabel(summary.loan.direction) }} · {{ amountLabel(summary.principalPaise) }} principal</small>
+              </span>
+            </span>
+            <span class="loan-account-cell">{{ accountName(summary) }}</span>
+            <span class="loan-date-cell">{{ loanDate(summary) }}</span>
+            <span class="loan-status" [class.loan-status-overdue]="summary.status === 'overdue'" [class.loan-status-settled]="summary.status === 'settled'" [class.loan-status-review]="summary.status === 'needs-review'">
+              {{ statusLabel(summary.status) }}
+            </span>
+            <strong class="loan-row-amount" [class.loan-positive]="summary.loan.direction === 'lent'" [class.loan-negative]="summary.loan.direction === 'borrowed'">
+              {{ outstandingLabel(summary) }}
+            </strong>
+          </a>
+        }
+      </div>
+      <div class="loan-pagination">
+        <span>Page {{ page() }} of {{ pageCount() }}</span>
+        <div>
+          <button type="button" class="button button-outline" [disabled]="page() <= 1 || loading()" (click)="changePage(page() - 1)">Previous</button>
+          <button type="button" class="button button-outline" [disabled]="page() >= pageCount() || loading()" (click)="changePage(page() + 1)">Next</button>
+        </div>
+      </div>
+    }
+  </section>
+
+  <section class="loan-people-panel" aria-label="People">
+    <div class="loan-section-heading">
+      <div>
+        <h2>People</h2>
+        <p>Archived people remain linked to their financial history.</p>
+      </div>
+      <a class="loan-text-link" routerLink="/loans/people/new">Add person</a>
+    </div>
+    @if (people().length) {
+      <div class="loan-people-grid">
+        @for (person of people(); track person.id) {
+          <a class="loan-person-card" [routerLink]="['/loans/people', person.id]">
+            <span class="loan-person-avatar">{{ person.name.slice(0, 1).toUpperCase() }}</span>
+            <span><strong>{{ person.name }}</strong><small>{{ person.status === 'active' ? 'Active' : 'Archived' }}</small></span>
+          </a>
+        }
+      </div>
+    } @else {
+      <p class="loan-people-empty">People you add for loans will appear here.</p>
+    }
+  </section>
+</section>

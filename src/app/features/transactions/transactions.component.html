@@ -1,0 +1,141 @@
+<section class="transactions-page">
+  <div class="page-heading transactions-heading">
+    <div>
+      <p class="eyebrow">YOUR ACTIVITY</p>
+      <h1>Transactions</h1>
+      <p class="page-subtitle">A complete history of income, spending, transfers, loans and savings allocations.</p>
+    </div>
+    <div class="transaction-page-actions">
+      <a class="button button-outline" routerLink="/transactions/categories">Categories</a>
+      <a class="button button-primary quick-add-button" routerLink="/transactions/quick">
+        <svg lucidePlus aria-hidden="true"></svg>Quick add
+      </a>
+      <a class="button button-outline detailed-add-button" routerLink="/transactions/new">Detailed entry</a>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+  }
+
+  <form class="transaction-filter-panel" (ngSubmit)="applyFilters()">
+    <div class="transaction-filter-heading">
+      <div>
+        <h2>History</h2>
+        <p>{{ totalItems() }} {{ totalItems() === 1 ? 'transaction' : 'transactions' }}</p>
+      </div>
+      <svg lucideFilter aria-hidden="true"></svg>
+    </div>
+    <div class="transaction-filter-grid">
+      <label class="transaction-search-field">
+        <span>Search description</span>
+        <div><svg lucideSearch aria-hidden="true"></svg><input name="search" [(ngModel)]="search" placeholder="Search transactions" /></div>
+      </label>
+      <label>
+        <span>Account</span>
+        <select name="accountId" [(ngModel)]="accountId">
+          <option value="">All accounts</option>
+          @for (account of accounts(); track account.id) {
+            <option [value]="account.id">{{ account.name }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Category</span>
+        <select name="categoryId" [(ngModel)]="categoryId">
+          <option value="">All categories</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }} · {{ category.appliesTo }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Type</span>
+        <select name="type" [(ngModel)]="type">
+          <option value="all">All types</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+          <option value="transfer">Transfer</option>
+          <option value="savings-contribution">Savings contribution</option>
+          <option value="savings-withdrawal">Savings withdrawal</option>
+          <option value="money-lent">Money lent</option>
+          <option value="money-borrowed">Money borrowed</option>
+          <option value="loan-repayment-received">Repayment received</option>
+          <option value="loan-repayment-made">Repayment made</option>
+        </select>
+      </label>
+      <label>
+        <span>From date</span>
+        <div class="filter-date-field"><svg lucideCalendarDays aria-hidden="true"></svg><input name="fromDate" type="date" [(ngModel)]="fromDate" /></div>
+      </label>
+      <label>
+        <span>To date</span>
+        <div class="filter-date-field"><svg lucideCalendarDays aria-hidden="true"></svg><input name="toDate" type="date" [(ngModel)]="toDate" /></div>
+      </label>
+      <label>
+        <span>Sort by</span>
+        <select name="sort" [(ngModel)]="sort">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+      </label>
+      <div class="transaction-filter-actions">
+        <button class="button button-outline" type="button" (click)="clearFilters()">Clear</button>
+        <button class="button button-primary" type="submit"><svg lucideSlidersHorizontal aria-hidden="true"></svg>Apply filters</button>
+      </div>
+    </div>
+  </form>
+
+  <section class="transaction-list-panel" aria-label="Transaction history">
+    @if (loading()) {
+      <div class="transaction-list-empty" role="status">Loading transactions…</div>
+    } @else if (transactions().length === 0) {
+      <div class="transaction-list-empty">
+        <span class="transaction-empty-icon"><svg lucideArrowLeftRight aria-hidden="true"></svg></span>
+        <h2>No transactions found</h2>
+        <p>Try changing your filters, or add your first transaction.</p>
+        <a class="button button-primary" routerLink="/transactions/quick"><svg lucidePlus aria-hidden="true"></svg>Add transaction</a>
+      </div>
+    } @else {
+      <div class="transaction-table-head">
+        <span>Transaction</span><span>Category</span><span>Account</span><span>Date</span><span class="amount-cell">Amount</span>
+      </div>
+      <div class="transaction-rows">
+        @for (transaction of transactions(); track transaction.id) {
+          <a class="transaction-row" [routerLink]="['/transactions', transaction.id]">
+            <span class="transaction-description-cell">
+              <span class="transaction-kind-icon" [class.kind-income]="transaction.type === 'income'" [class.kind-expense]="transaction.type === 'expense'">
+                @if (transaction.type === 'income') {
+                  <svg lucideArrowDownRight aria-hidden="true"></svg>
+                } @else if (transaction.type === 'expense') {
+                  <svg lucideArrowUpRight aria-hidden="true"></svg>
+                } @else {
+                  <svg lucideArrowLeftRight aria-hidden="true"></svg>
+                }
+              </span>
+              <span><strong>{{ transaction.description }}</strong><small>{{ typeLabel(transaction.type) }}</small></span>
+            </span>
+            <span class="transaction-category-cell">{{ categoryLabel(transaction) }}</span>
+            <span class="transaction-account-cell">{{ accountLabel(transaction) }}</span>
+            <span class="transaction-date-cell">{{ dateLabel(transaction.occurredAt) }}</span>
+            <strong class="transaction-amount-cell" [class.transaction-income-amount]="transaction.type === 'income'" [class.transaction-expense-amount]="transaction.type === 'expense'">
+              {{ amountLabel(transaction) }}
+            </strong>
+          </a>
+        }
+      </div>
+
+      <div class="transaction-pagination">
+        <span>Page {{ page() }} of {{ pageCount() }}</span>
+        <div>
+          <button type="button" class="account-icon-button" aria-label="Previous page" [disabled]="page() <= 1" (click)="changePage(page() - 1)">
+            <svg lucideChevronLeft aria-hidden="true"></svg>
+          </button>
+          <button type="button" class="account-icon-button" aria-label="Next page" [disabled]="page() >= pageCount()" (click)="changePage(page() + 1)">
+            <svg lucideChevronRight aria-hidden="true"></svg>
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+</section>

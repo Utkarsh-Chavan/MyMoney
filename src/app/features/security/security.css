@@ -1,0 +1,52 @@
+.security-page { width: 100%; }
+.security-panel { margin-bottom: 14px; padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+.security-panel-heading { display: flex; align-items: center; gap: 12px; }
+.security-panel-heading > div { min-width: 0; flex: 1; }
+.security-panel-heading h2 { margin: 0; font-size: 15px; font-weight: 670; }
+.security-panel-heading p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.security-panel-icon { display: grid; width: 39px; height: 39px; flex: 0 0 39px; place-items: center; border-radius: 12px; background: var(--accent-soft); color: var(--accent); }
+.security-panel-icon svg { width: 19px; height: 19px; }
+.security-status { padding: 6px 9px; border-radius: 99px; background: var(--surface-soft); color: var(--muted); font-size: 9px; font-weight: 650; }
+.security-status-on { background: color-mix(in srgb, var(--green) 12%, var(--surface)); color: var(--green); }
+.security-actions-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 17px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-soft); }
+.security-actions-row strong, .security-form-title h3 { font-size: 11px; font-weight: 650; }
+.security-actions-row p, .security-form-title p { margin: 4px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
+.security-actions-row .button { min-height: 35px; flex: 0 0 auto; font-size: 10px; }
+.security-actions-row .button svg, .security-form .button svg, .security-restore-button svg { width: 14px; height: 14px; }
+.security-form { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.security-form-title { margin-bottom: 5px; }
+.security-form-title h3 { margin: 0; }
+.security-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 13px; }
+.security-fields .field-label { margin-top: 13px; }
+.security-form > .button { margin-top: 15px; }
+.security-inline-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; margin-top: 12px; }
+.security-inline-form .button { min-height: 39px; }
+.security-disable-form .security-form-title { margin: 0; }
+.security-caveat { display: flex; align-items: flex-start; gap: 10px; margin-top: 17px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-soft); color: var(--muted); }
+.security-caveat > svg { width: 15px; height: 15px; flex: 0 0 15px; margin-top: 2px; color: var(--accent); }
+.security-caveat p { margin: 0; font-size: 9px; line-height: 1.65; }
+.security-caveat strong { color: var(--text); font-weight: 650; }
+.security-caveat-warning { border-color: color-mix(in srgb, var(--amber) 30%, var(--line)); background: color-mix(in srgb, var(--amber) 7%, var(--surface)); }
+.security-caveat-warning > svg { color: var(--amber); }
+.security-footnote { margin: 12px 0 0; color: var(--muted); font-size: 9px; line-height: 1.55; }
+.security-footnote code { font-size: 9px; }
+.security-restore-form { max-width: 650px; margin-top: 16px; }
+.security-file-input { min-height: 42px; padding: 9px; }
+.security-file-selected { margin: 6px 0 0; color: var(--muted); font-size: 9px; }
+.security-restore-button { margin-top: 15px; }
+.security-alert { margin-bottom: 12px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 9px; font-size: 10px; line-height: 1.5; }
+.security-alert-error { border-color: color-mix(in srgb, var(--rose) 35%, var(--line)); background: color-mix(in srgb, var(--rose) 9%, var(--surface)); color: var(--rose); }
+.security-alert-success { border-color: color-mix(in srgb, var(--green) 35%, var(--line)); background: color-mix(in srgb, var(--green) 9%, var(--surface)); color: var(--green); }
+@media (max-width: 760px) {
+  .security-panel { padding: 16px; }
+  .security-fields { grid-template-columns: 1fr; gap: 0; }
+  .security-actions-row { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 420px) {
+  .security-panel { padding: 13px; }
+  .security-panel-heading { align-items: flex-start; gap: 9px; }
+  .security-panel-heading h2 { font-size: 13px; }
+  .security-panel-icon { width: 34px; height: 34px; flex-basis: 34px; }
+  .security-status { margin-left: auto; }
+  .security-inline-form { grid-template-columns: 1fr; }
+}

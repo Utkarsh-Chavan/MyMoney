@@ -1,0 +1,93 @@
+<section class="account-form-page">
+  <a class="back-link" routerLink="/accounts"><svg lucideArrowLeft aria-hidden="true"></svg>Back to accounts</a>
+  <div class="account-form-layout">
+    <div class="account-form-intro">
+      <p class="eyebrow">{{ editing() ? 'ACCOUNT DETAILS' : 'GETTING STARTED' }}</p>
+      <h1>{{ editing() ? 'Edit account' : 'Add an account' }}</h1>
+      <p>Keep an accurate starting point for the money you track in MyMoney.</p>
+      <div class="account-form-private">
+        <svg lucideCircleCheck aria-hidden="true"></svg>
+        <span>Your account details are stored only in this device’s local database.</span>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="account-form-card" role="status">Loading account…</div>
+    } @else {
+      <form class="account-form-card" (ngSubmit)="save()">
+        @if (error()) {
+          <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+        }
+
+        <div class="account-form-section-title">
+          <h2>Account information</h2>
+          <p>Bank passwords, card numbers and login credentials are never requested.</p>
+        </div>
+
+        <label class="field-label" for="account-name">Account name <span>*</span></label>
+        <input
+          id="account-name"
+          class="text-field"
+          name="name"
+          [(ngModel)]="name"
+          maxlength="80"
+          placeholder="e.g. Everyday savings"
+          autocomplete="off"
+          required
+        />
+
+        <label class="field-label" for="account-type">Account type <span>*</span></label>
+        <select id="account-type" class="text-field" name="type" [(ngModel)]="type" required>
+          @for (accountType of types; track accountType) {
+            <option [value]="accountType">{{ typeLabel(accountType) }}</option>
+          }
+        </select>
+
+        <label class="field-label" for="account-provider">Bank or provider <span class="optional-label">Optional</span></label>
+        <input
+          id="account-provider"
+          class="text-field"
+          name="institution"
+          [(ngModel)]="institution"
+          maxlength="80"
+          placeholder="e.g. HDFC Bank or PhonePe"
+          autocomplete="off"
+        />
+
+        <div class="form-two-columns">
+          <div>
+            <label class="field-label" for="opening-balance">Opening balance <span>*</span></label>
+            <div class="currency-field"><span>₹</span><input
+              id="opening-balance"
+              name="openingBalance"
+              type="text"
+              inputmode="decimal"
+              [(ngModel)]="openingBalance"
+              [readonly]="hasActivity()"
+              required
+            /></div>
+            @if (hasActivity()) {
+              <span class="field-hint">Opening balance is locked after ledger activity.</span>
+            } @else {
+              <span class="field-hint">Use rupees; amounts are stored as integer paise.</span>
+            }
+          </div>
+          <div>
+            <label class="field-label" for="opening-date">Opening date <span>*</span></label>
+            <input id="opening-date" class="text-field" name="openingDate" type="date" [(ngModel)]="openingDate" [readonly]="hasActivity()" required />
+            @if (hasActivity()) {
+              <span class="field-hint">Opening date is locked after ledger activity.</span>
+            }
+          </div>
+        </div>
+
+        <div class="account-form-actions">
+          <a class="button button-outline" routerLink="/accounts">Cancel</a>
+          <button class="button button-primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : editing() ? 'Save changes' : 'Create account' }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</section>

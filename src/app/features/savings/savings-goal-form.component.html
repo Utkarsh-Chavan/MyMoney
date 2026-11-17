@@ -1,0 +1,16 @@
+<section class="savings-form-page">
+  <a class="back-link" routerLink="/savings"><svg lucideArrowLeft aria-hidden="true"></svg>Back to savings</a>
+  <div class="savings-form-layout">
+    <aside class="savings-form-intro"><p class="eyebrow">A PLAN FOR LATER</p><h1>{{ editing() ? 'Edit savings goal' : 'Create a savings goal' }}</h1><p>Set a target and keep a clear history of allocations and withdrawals.</p><div class="loan-private-note"><svg lucideCircleCheck aria-hidden="true"></svg><span>Your goal and its history stay on this device. Existing account and transaction records are preserved.</span></div></aside>
+    @if (loading()) { <div class="savings-form-card" role="status">Loading…</div> } @else {
+      <form class="savings-form-card" [formGroup]="form" (ngSubmit)="save()">
+        @if (error()) { <div class="account-alert account-alert-error" role="alert">{{ error() }}</div> }
+        <label class="field-label" for="goal-name">Goal name <span>*</span></label><input id="goal-name" class="text-field" formControlName="name" maxlength="100" placeholder="e.g. Emergency fund" required />
+        <label class="field-label" for="goal-target">Target amount <span>*</span></label><div class="loan-currency-field"><span>₹</span><input id="goal-target" type="text" inputmode="decimal" formControlName="targetAmount" placeholder="0.00" required /></div>
+        <label class="field-label" for="goal-date">Target date <span class="optional-label">Optional</span></label><input id="goal-date" class="text-field" type="date" [min]="today" formControlName="targetDate" />
+        <label class="field-label" for="goal-notes">Notes <span class="optional-label">Optional</span></label><textarea id="goal-notes" class="text-field savings-notes-field" rows="4" maxlength="2000" formControlName="notes" placeholder="What are you saving for?"></textarea>
+        <div class="account-form-actions"><a class="button button-outline" routerLink="/savings">Cancel</a><button class="button button-primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : editing() ? 'Save changes' : 'Create goal' }}</button></div>
+      </form>
+    }
+  </div>
+</section>

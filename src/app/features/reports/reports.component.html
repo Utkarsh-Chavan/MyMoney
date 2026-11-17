@@ -1,0 +1,181 @@
+<section class="reports-page">
+  <header class="page-heading reports-heading">
+    <div>
+      <p class="eyebrow">YOUR FINANCES, EXPLAINED</p>
+      <h1>Reports &amp; analytics</h1>
+      <p class="page-subtitle">Explore income and spending from your on-device ledger.</p>
+    </div>
+    @if (report(); as data) {
+      <div class="reports-export-actions">
+        <button class="button button-outline" type="button" (click)="exportTransactionsCsv()"><svg lucideDownload aria-hidden="true"></svg>Transactions CSV</button>
+        <button class="button button-outline" type="button" (click)="exportSummaryCsv()"><svg lucideDownload aria-hidden="true"></svg>Report CSV</button>
+        <button class="button button-primary" type="button" (click)="exportPdf()"><svg lucideFileText aria-hidden="true"></svg>Export PDF</button>
+      </div>
+    }
+  </header>
+
+  <section class="reports-filter-panel" aria-label="Report filters">
+    <div class="reports-filter-grid">
+      <div>
+        <label class="field-label" for="report-period">Date range</label>
+        <select id="report-period" class="text-field" [ngModel]="preset" (ngModelChange)="onPresetChange($event)">
+          @for (option of presetOptions; track option.value) { <option [value]="option.value">{{ option.label }}</option> }
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="report-start">From</label>
+        <input id="report-start" class="text-field" type="date" [(ngModel)]="fromDate" (ngModelChange)="onManualDateChange()" />
+      </div>
+      <div>
+        <label class="field-label" for="report-end">To</label>
+        <input id="report-end" class="text-field" type="date" [(ngModel)]="toDate" (ngModelChange)="onManualDateChange()" />
+      </div>
+      <div>
+        <label class="field-label" for="report-account">Account</label>
+        <select id="report-account" class="text-field" [(ngModel)]="accountId">
+          <option value="">All accounts</option>
+          @for (account of accounts(); track account.id) { <option [value]="account.id">{{ account.name }}</option> }
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="report-category">Expense category</label>
+        <select id="report-category" class="text-field" [(ngModel)]="categoryId">
+          <option value="">All categories</option>
+          @for (category of categories(); track category.id) { <option [value]="category.id">{{ category.name }}</option> }
+        </select>
+      </div>
+      <button class="button button-primary reports-apply-button" type="button" [disabled]="loading()" (click)="applyFilters()">
+        <svg lucideRefreshCw aria-hidden="true"></svg>{{ loading() ? 'Updating…' : 'Apply filters' }}
+      </button>
+    </div>
+    <p class="reports-filter-note">Only recorded income and expense transactions contribute to cash-flow totals. Transfers, loans, repayments and savings allocations are excluded.</p>
+  </section>
+
+  @if (error()) { <div class="account-alert account-alert-error" role="alert">{{ error() }}</div> }
+  @if (loading() && !report()) { <div class="reports-empty" role="status">Preparing your reports…</div> }
+  @else if (report(); as data) {
+    <div class="reports-range-caption">Showing {{ transactionDate(data.filters.fromDate) }} – {{ transactionDate(data.filters.toDate) }} · {{ data.transactions.length }} eligible transactions</div>
+
+    <section class="reports-summary-grid" aria-label="Financial summary">
+      <article class="reports-summary-card reports-income-card">
+        <span><svg lucideArrowDownRight aria-hidden="true"></svg>Total income</span>
+        <strong>{{ formatMoney(data.incomePaise) }}</strong>
+      </article>
+      <article class="reports-summary-card reports-expense-card">
+        <span><svg lucideArrowUpRight aria-hidden="true"></svg>Total expenditure</span>
+        <strong>{{ formatMoney(data.expensePaise) }}</strong>
+      </article>
+      <article class="reports-summary-card">
+        <span>Net cash flow <small>Income − expenditure</small></span>
+        <strong [class.reports-negative]="data.netCashFlowPaise < 0">{{ formatMoney(data.netCashFlowPaise) }}</strong>
+      </article>
+      <article class="reports-summary-card">
+        <span>Net savings rate <small>(Income − expenditure) ÷ income</small></span>
+        <strong>{{ data.savingsRatePercent | number:'1.0-1' }}%</strong>
+      </article>
+      <article class="reports-summary-card">
+        <span>Average daily expenditure <small>Across {{ data.periodDays }} calendar days</small></span>
+        <strong>{{ formatMoney(data.averageDailyExpensePaise) }}</strong>
+      </article>
+      <article class="reports-summary-card reports-summary-highlight">
+        <span>Highest spending category</span>
+        <strong>{{ data.highestCategory?.name ?? 'No expense data' }}</strong>
+        @if (data.highestCategory) { <small>{{ formatMoney(data.highestCategory.amountPaise) }}</small> }
+      </article>
+      <article class="reports-summary-card reports-summary-highlight">
+        <span>Highest expenditure transaction</span>
+        <strong>{{ data.highestExpense?.description ?? 'No expense data' }}</strong>
+        @if (data.highestExpense) { <small>{{ formatMoney(data.highestExpense.amountPaise) }} · {{ transactionDate(data.highestExpense.occurredAt) }}</small> }
+      </article>
+    </section>
+
+    <section class="reports-chart-grid" aria-label="Financial charts">
+      <article class="reports-panel reports-chart-panel">
+        <div class="reports-panel-heading"><div><h2>Income vs expenditure</h2><p>Monthly totals within the selected range</p></div></div>
+        @if (data.monthlyComparison.some(hasActivity)) { <div class="reports-chart"><canvas #chart data-chart="income-expense" role="img" aria-label="Monthly income compared with expenditure"></canvas></div> }
+        @else { <div class="reports-chart-empty">No income or expenditure in this range.</div> }
+      </article>
+      <article class="reports-panel reports-chart-panel">
+        <div class="reports-panel-heading"><div><h2>Weekly spending</h2><p>Daily expenditure for the 7 days ending {{ transactionDate(data.filters.toDate) }}</p></div></div>
+        @if (data.weeklySpending.some(hasSpend)) { <div class="reports-chart"><canvas #chart data-chart="weekly-spending" role="img" aria-label="Daily expenditure over the last seven days"></canvas></div> }
+        @else { <div class="reports-chart-empty">No expenditure in the last seven days.</div> }
+      </article>
+      <article class="reports-panel reports-chart-panel">
+        <div class="reports-panel-heading"><div><h2>Monthly expenditure trend</h2><p>Expense transactions by month</p></div></div>
+        @if (data.monthlyComparison.some(hasSpend)) { <div class="reports-chart"><canvas #chart data-chart="monthly-trend" role="img" aria-label="Monthly expenditure trend"></canvas></div> }
+        @else { <div class="reports-chart-empty">No monthly expenditure data.</div> }
+      </article>
+      <article class="reports-panel reports-chart-panel">
+        <div class="reports-panel-heading"><div><h2>Spending by category</h2><p>Selected period · expense transactions</p></div></div>
+        @if (data.categorySpending.length) { <div class="reports-chart reports-doughnut-chart"><canvas #chart data-chart="categories" role="img" aria-label="Expenditure breakdown by category"></canvas></div> }
+        @else { <div class="reports-chart-empty">No category spending to show.</div> }
+      </article>
+      <article class="reports-panel reports-chart-panel">
+        <div class="reports-panel-heading"><div><h2>Spending by account</h2><p>Compare accounts in the selected period</p></div></div>
+        @if (data.accountSpending.length) { <div class="reports-chart"><canvas #chart data-chart="accounts" role="img" aria-label="Expenditure comparison by account"></canvas></div> }
+        @else { <div class="reports-chart-empty">No account spending to show.</div> }
+      </article>
+      <article class="reports-panel reports-chart-panel">
+        <div class="reports-panel-heading"><div><h2>Yearly financial overview</h2><p>Income and expenditure · last five calendar years</p></div></div>
+        @if (data.yearlyOverview.some(hasActivity)) { <div class="reports-chart"><canvas #chart data-chart="yearly" role="img" aria-label="Yearly income compared with expenditure"></canvas></div> }
+        @else { <div class="reports-chart-empty">No yearly financial data.</div> }
+      </article>
+    </section>
+
+    <section class="reports-detail-grid" aria-label="Additional financial reports">
+      <article class="reports-panel">
+        <div class="reports-panel-heading"><div><h2>Monthly comparison</h2><p>Income and expenditure totals</p></div></div>
+        @if (data.monthlyComparison.length) {
+          <div class="reports-table-wrap"><table class="reports-table"><thead><tr><th>Month</th><th>Income</th><th>Expenditure</th><th>Net</th></tr></thead><tbody>
+            @for (month of data.monthlyComparison; track month.key) { <tr><th scope="row">{{ month.label }}</th><td class="reports-positive">{{ formatMoney(month.incomePaise) }}</td><td class="reports-negative">{{ formatMoney(month.expensePaise) }}</td><td>{{ formatMoney(month.incomePaise - month.expensePaise) }}</td></tr> }
+          </tbody></table></div>
+        } @else { <p class="reports-inline-empty">No monthly activity in this range.</p> }
+      </article>
+
+      <article class="reports-panel">
+        <div class="reports-panel-heading"><div><h2>Budget report</h2><p>Active budget progress at range end</p></div></div>
+        @if (data.budgets.length) {
+          <div class="reports-list">
+            @for (item of data.budgets; track item.budget.id) {
+              <div class="reports-list-row"><span><strong>{{ item.budget.name }}</strong><small>{{ item.budget.categoryId ? categoryName(item.budget.categoryId) : 'All expenses' }} · {{ item.percentUsed | number:'1.0-0' }}% used</small></span><b>{{ formatMoney(item.spentPaise) }} / {{ formatMoney(item.budget.amountPaise) }}</b></div>
+            }
+          </div>
+        } @else { <p class="reports-inline-empty">No budgets are configured.</p> }
+      </article>
+
+      <article class="reports-panel">
+        <div class="reports-panel-heading"><div><h2>Loan report</h2><p>Loans started within the selected range</p></div></div>
+        @if (data.loans.length) {
+          <div class="reports-list">
+            @for (item of data.loans; track item.loan.id) {
+              <div class="reports-list-row"><span><strong>{{ item.person?.name ?? ('personName' in item.loan ? item.loan.personName ?? 'Loan' : 'Loan') }}</strong><small>{{ item.loan.direction }} · {{ item.status }}</small></span><b>{{ formatMoney(item.outstandingPaise) }}</b></div>
+            }
+          </div>
+        } @else { <p class="reports-inline-empty">No loans started in this date range.</p> }
+      </article>
+
+      <article class="reports-panel">
+        <div class="reports-panel-heading"><div><h2>Savings report</h2><p>Tracked goal progress · lifetime allocations</p></div></div>
+        @if (data.savingsGoals.length) {
+          <div class="reports-list">
+            @for (item of data.savingsGoals; track item.goal.id) {
+              <div class="reports-list-row"><span><strong>{{ item.goal.name }}</strong><small>{{ item.goal.status }} · {{ item.percentComplete | number:'1.0-0' }}% of target</small></span><b>{{ formatMoney(item.savedPaise) }} / {{ formatMoney(item.goal.targetAmountPaise) }}</b></div>
+            }
+          </div>
+        } @else { <p class="reports-inline-empty">No savings goals are configured.</p> }
+      </article>
+    </section>
+
+    <section class="reports-panel reports-transactions-panel">
+      <div class="reports-panel-heading"><div><h2>Transactions in this report</h2><p>Showing eligible income and expense records only</p></div><button class="reports-text-button" type="button" (click)="exportTransactionsCsv()">Export CSV</button></div>
+      @if (data.transactions.length) {
+        <div class="reports-table-wrap"><table class="reports-table"><thead><tr><th>Date</th><th>Transaction</th><th>Account</th><th>Category</th><th>Type</th><th>Amount</th></tr></thead><tbody>
+          @for (transaction of data.transactions.slice(0, 25); track transaction.id) {
+            <tr><td>{{ transactionDate(transaction.occurredAt) }}</td><th scope="row">{{ transaction.description }}</th><td>{{ accountName(transaction.accountId) }}</td><td>{{ categoryName(transaction.categoryId) }}</td><td>{{ transaction.type }}</td><td [class.reports-positive]="transaction.type === 'income'" [class.reports-negative]="transaction.type === 'expense'">{{ transaction.type === 'income' ? '+' : '−' }}{{ formatMoney(transaction.amountPaise) }}</td></tr>
+          }
+        </tbody></table></div>
+        @if (data.transactions.length > 25) { <p class="reports-table-caption">Showing the latest 25 of {{ data.transactions.length }} transactions. Export CSV for the complete filtered list.</p> }
+      } @else { <p class="reports-inline-empty">No eligible transactions match these filters.</p> }
+    </section>
+  }
+</section>

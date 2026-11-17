@@ -1,0 +1,101 @@
+<section class="transfer-page">
+  <a class="back-link" routerLink="/accounts"><svg lucideArrowLeft aria-hidden="true"></svg>Back to accounts</a>
+  <div class="transfer-layout">
+    <div class="transfer-intro">
+      <p class="eyebrow">MOVE MONEY</p>
+      <h1>Transfer between accounts</h1>
+      <p>Move money you already own. Transfers change account balances but never count as income or spending.</p>
+      <div class="transfer-ledger-preview">
+        <div><span class="ledger-minus">−₹</span><strong>From account</strong></div>
+        <svg lucideArrowLeftRight aria-hidden="true"></svg>
+        <div><span class="ledger-plus">+₹</span><strong>To account</strong></div>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="transfer-form-card" role="status">Loading accounts…</div>
+    } @else {
+      <form class="transfer-form-card" (ngSubmit)="save()">
+        @if (error()) {
+          <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+        }
+        @if (success()) {
+          <div class="account-alert account-alert-success" role="status">
+            <svg lucideCircleCheck aria-hidden="true"></svg>{{ success() }}
+          </div>
+        }
+        @if (accounts().length < 2) {
+          <div class="account-alert account-alert-info">
+            Add at least two active accounts before recording a transfer.
+          </div>
+        }
+
+        <label class="field-label" for="transfer-from">From account <span>*</span></label>
+        <select id="transfer-from" class="text-field" name="fromAccountId" [(ngModel)]="fromAccountId" required>
+          <option value="" disabled>Select an account</option>
+          @for (summary of accounts(); track summary.account.id) {
+            <option [value]="summary.account.id">
+              {{ summary.account.name }} · {{ formatMoney(summary.currentBalancePaise) }}
+            </option>
+          }
+        </select>
+
+        <div class="transfer-direction" aria-hidden="true"><svg lucideArrowLeftRight></svg></div>
+
+        <label class="field-label" for="transfer-to">To account <span>*</span></label>
+        <select id="transfer-to" class="text-field" name="toAccountId" [(ngModel)]="toAccountId" required>
+          <option value="" disabled>Select an account</option>
+          @for (summary of accounts(); track summary.account.id) {
+            <option [value]="summary.account.id" [disabled]="summary.account.id === fromAccountId">
+              {{ summary.account.name }}
+            </option>
+          }
+        </select>
+
+        @if (selectedSource(); as source) {
+          <div class="available-balance">Available balance <strong>{{ formatMoney(source.currentBalancePaise) }}</strong></div>
+        }
+
+        <div class="form-two-columns transfer-amount-row">
+          <div>
+            <label class="field-label" for="transfer-amount">Amount <span>*</span></label>
+            <div class="currency-field"><span>₹</span><input
+              id="transfer-amount"
+              name="amount"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              [(ngModel)]="amount"
+              placeholder="0.00"
+              required
+            /></div>
+          </div>
+          <div>
+            <label class="field-label" for="transfer-date">Transfer date <span>*</span></label>
+            <input id="transfer-date" class="text-field" name="occurredAt" type="date" [(ngModel)]="occurredAt" required />
+          </div>
+        </div>
+
+        <label class="field-label" for="transfer-description">Note <span class="optional-label">Optional</span></label>
+        <input id="transfer-description" class="text-field" name="description" [(ngModel)]="description" maxlength="160" placeholder="e.g. Monthly savings" />
+
+        <label class="negative-balance-option">
+          <input
+            type="checkbox"
+            name="allowNegativeBalances"
+            [ngModel]="allowNegativeBalances()"
+            (ngModelChange)="updateNegativeBalancePreference($event)"
+          />
+          <span><strong>Allow negative balances</strong><small>By default, transfers cannot exceed the source account balance.</small></span>
+        </label>
+
+        <div class="account-form-actions">
+          <a class="button button-outline" routerLink="/accounts">Cancel</a>
+          <button class="button button-primary" type="submit" [disabled]="saving() || accounts().length < 2">
+            {{ saving() ? 'Recording…' : 'Confirm transfer' }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</section>

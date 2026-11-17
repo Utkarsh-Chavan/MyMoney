@@ -1,0 +1,198 @@
+<section class="calculator-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">PLAN WITH CONFIDENCE</p>
+      <h1>Financial calculator</h1>
+      <p class="page-subtitle">Explore everyday calculations and estimates. Nothing here changes your financial records.</p>
+    </div>
+  </header>
+
+  <nav class="calculator-tabs" aria-label="Calculator type" role="tablist">
+    @for (tab of tabs; track tab.id) {
+      <button
+        class="calculator-tab"
+        [class.calculator-tab-active]="activeTab() === tab.id"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeTab() === tab.id"
+        (click)="selectTab(tab.id)"
+      >{{ tab.label }}</button>
+    }
+  </nav>
+
+  @if (activeTab() === 'basic') {
+    <section class="calculator-panel basic-calculator" aria-label="Basic calculator">
+      <div class="basic-calculator-display" aria-live="polite">
+        <span>Calculation</span>
+        <strong>{{ basicDisplay() }}</strong>
+      </div>
+      @if (basicError()) { <p class="calculator-error" role="alert">{{ basicError() }}</p> }
+      <div class="basic-keypad">
+        <button class="calculator-key calculator-key-utility" type="button" (click)="clearBasic()" aria-label="Clear">AC</button>
+        <button class="calculator-key calculator-key-utility" type="button" (click)="backspace()" aria-label="Backspace">⌫</button>
+        <button class="calculator-key calculator-key-utility" type="button" (click)="applyPercent()" aria-label="Percentage"><svg lucidePercent aria-hidden="true"></svg></button>
+        <button class="calculator-key calculator-key-operator" type="button" (click)="setOperator('÷')" aria-label="Divide">÷</button>
+        @for (digit of ['7', '8', '9']; track digit) { <button class="calculator-key" type="button" (click)="pressDigit(digit)">{{ digit }}</button> }
+        <button class="calculator-key calculator-key-operator" type="button" (click)="setOperator('×')" aria-label="Multiply">×</button>
+        @for (digit of ['4', '5', '6']; track digit) { <button class="calculator-key" type="button" (click)="pressDigit(digit)">{{ digit }}</button> }
+        <button class="calculator-key calculator-key-operator" type="button" (click)="setOperator('−')" aria-label="Subtract">−</button>
+        @for (digit of ['1', '2', '3']; track digit) { <button class="calculator-key" type="button" (click)="pressDigit(digit)">{{ digit }}</button> }
+        <button class="calculator-key calculator-key-operator" type="button" (click)="setOperator('+')" aria-label="Add">+</button>
+        <button class="calculator-key calculator-key-zero" type="button" (click)="pressDigit('0')">0</button>
+        <button class="calculator-key" type="button" (click)="pressDecimal()" aria-label="Decimal point">.</button>
+        <button class="calculator-key calculator-key-equals" type="button" (click)="calculateBasic()" aria-label="Equals">=</button>
+      </div>
+    </section>
+  }
+
+  @if (activeTab() === 'emi') {
+    <section class="calculator-layout">
+      <form class="calculator-panel calculator-form" (ngSubmit)="calculateEmi()">
+        <div class="calculator-panel-heading"><div><h2>EMI calculator</h2><p>Estimate a reducing-balance loan payment.</p></div><span class="calculator-icon"><svg lucideCalculator aria-hidden="true"></svg></span></div>
+        <label class="field-label" for="emi-principal">Loan principal <span class="calculator-input-hint">INR</span></label>
+        <input id="emi-principal" class="text-field" type="text" inputmode="decimal" name="emiPrincipal" [(ngModel)]="emiPrincipal" placeholder="e.g. 500000" required />
+        <label class="field-label" for="emi-rate">Annual interest rate (%)</label>
+        <input id="emi-rate" class="text-field" type="text" inputmode="decimal" name="emiRate" [(ngModel)]="emiRate" required />
+        <label class="field-label" for="emi-tenure">Loan tenure</label>
+        <div class="calculator-input-row">
+          <input id="emi-tenure" class="text-field" type="text" inputmode="numeric" name="emiTenure" [(ngModel)]="emiTenure" required />
+          <select class="text-field" aria-label="Tenure unit" name="emiTenureUnit" [(ngModel)]="emiTenureUnit"><option value="years">Years</option><option value="months">Months</option></select>
+        </div>
+        <button class="button button-primary calculator-submit" type="submit">Calculate EMI</button>
+        @if (emiError()) { <p class="calculator-error" role="alert">{{ emiError() }}</p> }
+      </form>
+
+      @if (emiResult(); as result) {
+        <section class="calculator-panel calculator-result-panel" aria-label="EMI results">
+          <div class="calculator-panel-heading"><div><h2>Estimated repayment</h2><p>Rounded to the nearest paise.</p></div></div>
+          <div class="calculator-result-highlight"><span>Monthly EMI</span><strong>{{ formatMoney(result.monthlyEmiPaise) }}</strong></div>
+          <div class="calculator-result-grid">
+            <div><span>Total interest</span><strong>{{ formatMoney(result.totalInterestPaise) }}</strong></div>
+            <div><span>Total repayment</span><strong>{{ formatMoney(result.totalRepaymentPaise) }}</strong></div>
+          </div>
+          <h3 class="calculator-subheading">Amortization schedule</h3>
+          <div class="calculator-table-scroll">
+            <table class="calculator-table">
+              <thead><tr><th>Month</th><th>Payment</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead>
+              <tbody>
+                @for (row of result.schedule; track row.installment) {
+                  <tr><th scope="row">{{ row.installment }}</th><td>{{ formatMoney(row.paymentPaise) }}</td><td>{{ formatMoney(row.principalPaise) }}</td><td>{{ formatMoney(row.interestPaise) }}</td><td>{{ formatMoney(row.remainingBalancePaise) }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="calculator-note">The final installment may differ slightly due to paise rounding.</p>
+        </section>
+      } @else {
+        <section class="calculator-panel calculator-empty"><svg lucideTrendingUp aria-hidden="true"></svg><p>Enter the principal, interest rate and tenure to view an estimated EMI and full repayment schedule.</p></section>
+      }
+    </section>
+  }
+
+  @if (activeTab() === 'interest') {
+    <section class="calculator-layout">
+      <form class="calculator-panel calculator-form" (ngSubmit)="calculateInterest()">
+        <div class="calculator-panel-heading"><div><h2>Simple &amp; compound interest</h2><p>Compare interest over a fixed period.</p></div><span class="calculator-icon"><svg lucideTrendingUp aria-hidden="true"></svg></span></div>
+        <label class="field-label" for="interest-principal">Principal <span class="calculator-input-hint">INR</span></label>
+        <input id="interest-principal" class="text-field" type="text" inputmode="decimal" name="interestPrincipal" [(ngModel)]="interestPrincipal" required />
+        <label class="field-label" for="interest-rate">Annual interest rate (%)</label>
+        <input id="interest-rate" class="text-field" type="text" inputmode="decimal" name="interestRate" [(ngModel)]="interestRate" required />
+        <label class="field-label" for="interest-years">Time period (years)</label>
+        <input id="interest-years" class="text-field" type="text" inputmode="decimal" name="interestYears" [(ngModel)]="interestYears" required />
+        <label class="field-label" for="interest-frequency">Compound frequency</label>
+        <select id="interest-frequency" class="text-field" name="interestFrequency" [(ngModel)]="interestFrequency">
+          <option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option>
+        </select>
+        <button class="button button-primary calculator-submit" type="submit">Compare interest</button>
+        @if (interestError()) { <p class="calculator-error" role="alert">{{ interestError() }}</p> }
+      </form>
+      @if (interestResult(); as result) {
+        <section class="calculator-panel calculator-result-panel" aria-label="Interest results">
+          <div class="calculator-panel-heading"><div><h2>Interest comparison</h2><p>Simple interest versus selected compounding frequency.</p></div></div>
+          <div class="calculator-result-grid calculator-interest-grid">
+            <article><span>Simple interest</span><strong>{{ formatMoney(result.simpleInterestPaise) }}</strong><small>Final amount {{ formatMoney(result.simpleFinalAmountPaise) }}</small></article>
+            <article><span>Compound interest</span><strong>{{ formatMoney(result.compoundInterestPaise) }}</strong><small>Final amount {{ formatMoney(result.compoundFinalAmountPaise) }}</small></article>
+          </div>
+          <p class="calculator-note">Interest is calculated on the supplied annual rate and rounded to the nearest paise.</p>
+        </section>
+      } @else {
+        <section class="calculator-panel calculator-empty"><svg lucideTrendingUp aria-hidden="true"></svg><p>Compare simple interest with monthly, quarterly or yearly compounding.</p></section>
+      }
+    </section>
+  }
+
+  @if (activeTab() === 'sip') {
+    <section class="calculator-layout">
+      <form class="calculator-panel calculator-form" (ngSubmit)="calculateSip()">
+        <div class="calculator-panel-heading"><div><h2>SIP calculator</h2><p>Explore the potential growth of regular investments.</p></div><span class="calculator-icon"><svg lucideTrendingUp aria-hidden="true"></svg></span></div>
+        <label class="field-label" for="sip-monthly">Monthly investment <span class="calculator-input-hint">INR</span></label>
+        <input id="sip-monthly" class="text-field" type="text" inputmode="decimal" name="sipMonthlyInvestment" [(ngModel)]="sipMonthlyInvestment" required />
+        <label class="field-label" for="sip-rate">Expected annual return (%)</label>
+        <input id="sip-rate" class="text-field" type="text" inputmode="decimal" name="sipRate" [(ngModel)]="sipRate" required />
+        <label class="field-label" for="sip-years">Investment duration (years)</label>
+        <input id="sip-years" class="text-field" type="text" inputmode="numeric" name="sipYears" [(ngModel)]="sipYears" required />
+        <button class="button button-primary calculator-submit" type="submit">Estimate SIP value</button>
+        @if (sipError()) { <p class="calculator-error" role="alert">{{ sipError() }}</p> }
+      </form>
+      @if (sipResult(); as result) {
+        <section class="calculator-panel calculator-result-panel" aria-label="SIP estimate">
+          <div class="calculator-panel-heading"><div><h2>Estimated investment value</h2><p>Based on the expected annual return entered.</p></div></div>
+          <div class="calculator-result-highlight"><span>Estimated future value</span><strong>{{ formatMoney(result.futureValuePaise) }}</strong></div>
+          <div class="calculator-result-grid">
+            <div><span>Total invested</span><strong>{{ formatMoney(result.investedPaise) }}</strong></div>
+            <div><span>Estimated returns</span><strong>{{ formatMoney(result.estimatedReturnsPaise) }}</strong></div>
+          </div>
+          <p class="calculator-disclaimer">Estimate only, not guaranteed returns. Assumes fixed monthly deposits at the end of each month and a constant nominal annual return divided monthly.</p>
+        </section>
+      } @else {
+        <section class="calculator-panel calculator-empty"><svg lucideTrendingUp aria-hidden="true"></svg><p>Enter a monthly contribution, an expected return and an investment duration.</p></section>
+      }
+    </section>
+  }
+
+  @if (activeTab() === 'deposits') {
+    <section class="calculator-layout">
+      <form class="calculator-panel calculator-form" (ngSubmit)="calculateDeposit()">
+        <div class="calculator-panel-heading"><div><h2>FD / RD calculator</h2><p>Estimate fixed or recurring deposit maturity.</p></div><span class="calculator-icon"><svg lucideCalculator aria-hidden="true"></svg></span></div>
+        <div class="calculator-mode-switch" role="group" aria-label="Deposit type">
+          <button type="button" [class.calculator-mode-active]="depositMode() === 'fd'" (click)="chooseDepositMode('fd')">Fixed deposit</button>
+          <button type="button" [class.calculator-mode-active]="depositMode() === 'rd'" (click)="chooseDepositMode('rd')">Recurring deposit</button>
+        </div>
+        @if (depositMode() === 'fd') {
+          <label class="field-label" for="fd-principal">Deposit principal <span class="calculator-input-hint">INR</span></label>
+          <input id="fd-principal" class="text-field" type="text" inputmode="decimal" name="fdPrincipal" [(ngModel)]="fdPrincipal" required />
+          <label class="field-label" for="fd-rate">Annual interest rate (%)</label>
+          <input id="fd-rate" class="text-field" type="text" inputmode="decimal" name="fdRate" [(ngModel)]="fdRate" required />
+          <label class="field-label" for="fd-years">Deposit duration (years)</label>
+          <input id="fd-years" class="text-field" type="text" inputmode="decimal" name="fdYears" [(ngModel)]="fdYears" required />
+          <label class="field-label" for="fd-frequency">Compounding frequency</label>
+          <select id="fd-frequency" class="text-field" name="fdFrequency" [(ngModel)]="fdFrequency"><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select>
+        } @else {
+          <label class="field-label" for="rd-monthly">Monthly deposit <span class="calculator-input-hint">INR</span></label>
+          <input id="rd-monthly" class="text-field" type="text" inputmode="decimal" name="rdMonthlyDeposit" [(ngModel)]="rdMonthlyDeposit" required />
+          <label class="field-label" for="rd-rate">Annual interest rate (%)</label>
+          <input id="rd-rate" class="text-field" type="text" inputmode="decimal" name="rdRate" [(ngModel)]="rdRate" required />
+          <label class="field-label" for="rd-years">Deposit duration (years)</label>
+          <input id="rd-years" class="text-field" type="text" inputmode="numeric" name="rdYears" [(ngModel)]="rdYears" required />
+          <label class="field-label" for="rd-frequency">Compounding frequency</label>
+          <select id="rd-frequency" class="text-field" name="rdFrequency" [(ngModel)]="rdFrequency"><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select>
+        }
+        <button class="button button-primary calculator-submit" type="submit">Calculate maturity</button>
+        @if (depositError()) { <p class="calculator-error" role="alert">{{ depositError() }}</p> }
+      </form>
+      @if (depositResult(); as result) {
+        <section class="calculator-panel calculator-result-panel" aria-label="Deposit estimate">
+          <div class="calculator-panel-heading"><div><h2>Estimated maturity</h2><p>{{ depositMode() === 'fd' ? 'Fixed deposit' : 'Recurring deposit' }} projection.</p></div></div>
+          <div class="calculator-result-highlight"><span>Maturity value</span><strong>{{ formatMoney(result.maturityValuePaise) }}</strong></div>
+          <div class="calculator-result-grid">
+            <div><span>Total {{ depositMode() === 'fd' ? 'principal' : 'deposits' }}</span><strong>{{ formatMoney(result.investedPaise) }}</strong></div>
+            <div><span>Estimated interest</span><strong>{{ formatMoney(result.estimatedInterestPaise) }}</strong></div>
+          </div>
+          <p class="calculator-disclaimer">Estimate only, not a bank quote or guaranteed return. RD assumes equal deposits at each month-end and converts the selected frequency to an equivalent monthly rate.</p>
+        </section>
+      } @else {
+        <section class="calculator-panel calculator-empty"><svg lucideTrendingUp aria-hidden="true"></svg><p>Select FD or RD, enter the rate and term, then calculate an estimated maturity amount.</p></section>
+      }
+    </section>
+  }
+</section>

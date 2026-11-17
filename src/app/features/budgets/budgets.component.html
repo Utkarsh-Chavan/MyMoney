@@ -1,0 +1,71 @@
+<section class="budgets-page">
+  <header class="page-heading budget-heading">
+    <div>
+      <p class="eyebrow">PLAN YOUR SPENDING</p>
+      <h1>Budgets</h1>
+      <p class="page-subtitle">Track expense-category spending against recurring limits.</p>
+    </div>
+    <a class="button button-primary" routerLink="/budgets/new"><svg lucidePlus aria-hidden="true"></svg>New budget</a>
+  </header>
+
+  @if (error()) { <div class="account-alert account-alert-error" role="alert">{{ error() }}</div> }
+  @if (loading()) {
+    <div class="budget-empty" role="status">Loading budgets…</div>
+  } @else if (summaries().length === 0) {
+    <div class="budget-empty">
+      <span class="budget-empty-icon"><svg lucideReceipt aria-hidden="true"></svg></span>
+      <h2>Start with a spending plan</h2>
+      <p>Create a budget for an expense category. Only expense transactions count toward its progress.</p>
+      <a class="button button-primary" routerLink="/budgets/new">Create a budget</a>
+    </div>
+  } @else {
+    <div class="budget-grid">
+      @for (summary of summaries(); track summary.budget.id) {
+        <article class="budget-card" [class.budget-card-archived]="summary.budget.archivedAt">
+          <div class="budget-card-heading">
+            <div>
+              <span class="budget-category">{{ categoryName(summary.budget.categoryId) }} · {{ periodLabel(summary) }}</span>
+              <h2>{{ summary.budget.name }}</h2>
+            </div>
+            <div class="budget-card-actions">
+              @if (!summary.budget.archivedAt) {
+                <a class="icon-button" [routerLink]="['/budgets', summary.budget.id, 'edit']" [attr.aria-label]="'Edit ' + summary.budget.name" title="Edit budget">Edit</a>
+                <button class="icon-button" type="button" (click)="archive(summary)" [attr.aria-label]="'Archive ' + summary.budget.name" title="Archive budget"><svg lucideArchive aria-hidden="true"></svg></button>
+              } @else { <span class="budget-archived-label">Archived</span> }
+            </div>
+          </div>
+
+          <div class="budget-spending-row">
+            <strong>{{ amount(summary.spentPaise) }}</strong>
+            <span>of {{ amount(summary.budget.amountPaise) }}</span>
+            <span class="budget-percent">{{ percentage(summary.percentUsed) }}</span>
+          </div>
+          <div class="budget-progress-track" role="progressbar"
+            [attr.aria-valuenow]="summary.percentUsed" aria-valuemin="0" aria-valuemax="100"
+            [attr.aria-label]="summary.budget.name + ' spending'">
+            <span [style.width.%]="summary.percentUsed > 100 ? 100 : summary.percentUsed"
+              [class.budget-progress-over]="summary.percentUsed >= 100"></span>
+          </div>
+          @if (summary.periodStart) {
+            <div class="budget-period-caption">{{ summary.periodStart }} – {{ summary.periodEnd }} ·
+              @if (summary.remainingPaise >= 0) { {{ amount(summary.remainingPaise) }} remaining }
+              @else { {{ amount(-summary.remainingPaise) }} over budget }
+            </div>
+          } @else {
+            <div class="budget-period-caption">Starts {{ summary.budget.startsOn }}@if (summary.budget.endsOn) { · Ended {{ summary.budget.endsOn }} }</div>
+          }
+
+          @if (summary.alerts.length) {
+            <div class="budget-alerts" aria-label="Budget threshold alerts">
+              <svg lucideBell aria-hidden="true"></svg>
+              @for (alert of summary.alerts; track alert.id) {
+                <span>{{ alert.thresholdPercent }}% reached this period</span>
+              }
+            </div>
+          }
+        </article>
+      }
+    </div>
+    <p class="budget-footnote">Budget alerts are saved once per budget period. Older transactions and alerts remain on this device when a budget is archived.</p>
+  }
+</section>

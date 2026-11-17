@@ -1,0 +1,139 @@
+@if (!securityReady()) {
+  <main class="security-gate" role="status"><section class="security-gate-card"><p class="eyebrow">MYMONEY</p><h1>Opening your local workspace…</h1></section></main>
+} @else if (securityStartupError()) {
+  <main class="security-gate">
+    <section class="security-gate-card">
+      <p class="eyebrow">SECURITY SETTINGS</p>
+      <h1>Unable to open MyMoney</h1>
+      <p class="security-gate-copy" role="alert">{{ securityStartupError() }}</p>
+      <button class="button button-primary security-action" type="button" (click)="retrySecurityInitialization()">Try again</button>
+    </section>
+  </main>
+} @else if (applicationLock()?.locked()) {
+  <main class="security-gate">
+    <section class="security-gate-card">
+      <p class="eyebrow">MYMONEY IS LOCKED</p>
+      <h1>Welcome back</h1>
+      <p class="security-gate-copy">Enter your application passphrase to continue on this device.</p>
+      <form (submit)="unlockApplication($event)">
+        <label class="field-label" for="application-lock-passphrase">Passphrase</label>
+        <input id="application-lock-passphrase" class="text-field" type="password" [value]="lockPassphrase()" (input)="updateLockPassphrase($event)" autocomplete="current-password" required autofocus />
+        @if (lockError()) { <p class="security-error" role="alert">{{ lockError() }}</p> }
+        <button class="button button-primary security-action" type="submit" [disabled]="lockBusy()">
+          {{ lockBusy() ? 'Checking…' : 'Unlock MyMoney' }}
+        </button>
+      </form>
+      <p class="security-gate-disclaimer">This local application lock is a privacy convenience, not protection against someone with access to this browser profile or developer tools.</p>
+    </section>
+  </main>
+} @else {
+<div class="app-shell">
+  @if (isMobileNavOpen()) {
+    <button
+      class="mobile-backdrop"
+      type="button"
+      aria-label="Close navigation"
+      (click)="closeMobileNavigation()"
+    ></button>
+  }
+
+  <aside class="sidebar" [class.sidebar-open]="isMobileNavOpen()" aria-label="Main navigation">
+    <a class="brand" routerLink="/" (click)="closeMobileNavigation()">
+      <span class="brand-mark">m</span>
+      <span class="brand-name">my<span>money</span></span>
+    </a>
+
+    <div class="sidebar-caption">YOUR FINANCES</div>
+    <nav class="side-nav">
+      <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileNavigation()">
+        <svg lucideLayoutDashboard aria-hidden="true"></svg><span>Overview</span>
+      </a>
+      <a class="nav-link" routerLink="/accounts" routerLinkActive="active" (click)="closeMobileNavigation()">
+        <svg lucideWallet aria-hidden="true"></svg><span>Accounts</span>
+      </a>
+      <a class="nav-link" routerLink="/transactions" routerLinkActive="active" (click)="closeMobileNavigation()">
+        <svg lucideArrowLeftRight aria-hidden="true"></svg><span>Transactions</span>
+      </a>
+      <a class="nav-link" routerLink="/loans" routerLinkActive="active" (click)="closeMobileNavigation()">
+        <svg lucideHandCoins aria-hidden="true"></svg><span>Loans &amp; debts</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-caption planning-caption">PLAN AHEAD</div>
+    <nav class="side-nav">
+      <a class="nav-link" routerLink="/budgets" routerLinkActive="active" (click)="closeMobileNavigation()">
+        <svg lucideReceipt aria-hidden="true"></svg><span>Budgets</span>
+      </a>
+      <a class="nav-link" routerLink="/savings" routerLinkActive="active" (click)="closeMobileNavigation()">
+        <svg lucideTarget aria-hidden="true"></svg><span>Savings goals</span>
+      </a>
+      <a class="nav-link" routerLink="/reports" routerLinkActive="active" (click)="closeMobileNavigation()">
+        <svg lucideChartNoAxesCombined aria-hidden="true"></svg><span>Reports</span>
+      </a>
+      <a class="nav-link" routerLink="/calculator" routerLinkActive="active" (click)="closeMobileNavigation()">
+        <svg lucideCalculator aria-hidden="true"></svg><span>Calculator</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="privacy-note">
+        <span class="privacy-indicator"></span>
+        <div><strong>Private by design</strong><span>Your data stays on this device</span></div>
+      </div>
+      <a class="nav-link settings-link" routerLink="/settings" routerLinkActive="active" (click)="closeMobileNavigation()">
+        <svg lucideSettings aria-hidden="true"></svg><span>Settings</span>
+      </a>
+      <div class="profile-chip">
+        <span class="profile-avatar">M</span>
+        <span><strong>My workspace</strong><small>Personal account</small></span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-area">
+    <header class="topbar">
+      <div class="topbar-start">
+        <button class="mobile-menu-button" type="button" aria-label="Open navigation" (click)="isMobileNavOpen.set(true)">
+          <svg lucideMenu aria-hidden="true"></svg>
+        </button>
+        <span class="breadcrumb">My workspace <span>/</span> <strong>{{ currentPage() }}</strong></span>
+      </div>
+      <div class="topbar-actions">
+        <span class="local-status"><span></span>Stored on this device</span>
+        <button
+          class="theme-toggle"
+          type="button"
+          [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+          [attr.title]="themeService.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+          (click)="themeService.toggle()"
+        >
+          @if (themeService.theme() === 'dark') {
+            <svg lucideSun aria-hidden="true"></svg>
+          } @else {
+            <svg lucideMoon aria-hidden="true"></svg>
+          }
+        </button>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <router-outlet></router-outlet>
+    </div>
+
+    <nav class="mobile-bottom-nav" aria-label="Quick navigation">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" aria-label="Overview">
+        <svg lucideLayoutDashboard aria-hidden="true"></svg><span>Home</span>
+      </a>
+      <a routerLink="/accounts" routerLinkActive="active" aria-label="Accounts">
+        <svg lucideWallet aria-hidden="true"></svg><span>Accounts</span>
+      </a>
+      <a routerLink="/transactions" routerLinkActive="active" aria-label="Transactions">
+        <svg lucideArrowLeftRight aria-hidden="true"></svg><span>Activity</span>
+      </a>
+      <a routerLink="/reports" routerLinkActive="active" aria-label="Reports">
+        <svg lucideChartNoAxesCombined aria-hidden="true"></svg><span>Reports</span>
+      </a>
+    </nav>
+  </main>
+</div>
+}

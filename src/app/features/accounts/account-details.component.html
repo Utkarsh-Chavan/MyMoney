@@ -1,0 +1,105 @@
+<section class="account-details-page">
+  <a class="back-link" routerLink="/accounts"><svg lucideArrowLeft aria-hidden="true"></svg>Back to accounts</a>
+
+  @if (loading()) {
+    <div class="account-empty-state" role="status">Loading account details…</div>
+  } @else if (error()) {
+    <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+  } @else if (summary(); as accountSummary) {
+    <header class="account-detail-header">
+      <div>
+        <p class="eyebrow">{{ typeLabel(accountSummary.account.type) }}</p>
+        <div class="account-detail-title-row">
+          <h1>{{ accountSummary.account.name }}</h1>
+          <span class="account-status-badge" [class.badge-archived]="accountSummary.account.status === 'archived'">
+            {{ accountSummary.account.status === 'active' ? 'Active' : 'Archived' }}
+          </span>
+        </div>
+        <p class="page-subtitle">{{ accountSummary.account.institution || 'Personal account' }} · Opened {{ accountSummary.account.openingDate }}</p>
+      </div>
+      <div class="account-detail-actions">
+        <a class="button button-outline" [routerLink]="['/accounts', accountSummary.account.id, 'edit']">
+          <svg lucidePencil aria-hidden="true"></svg>Edit
+        </a>
+        @if (accountSummary.account.status === 'active') {
+          <a class="button button-primary" routerLink="/accounts/transfer" [queryParams]="{ from: accountSummary.account.id }">
+            <svg lucideArrowLeftRight aria-hidden="true"></svg>Transfer
+          </a>
+          <button class="button button-outline" type="button" (click)="archive()">
+            <svg lucideArchive aria-hidden="true"></svg>Archive
+          </button>
+        }
+      </div>
+    </header>
+
+    <div class="account-metrics">
+      <article class="account-metric-card account-metric-primary">
+        <span>Current balance</span>
+        <strong>{{ formatMoney(accountSummary.currentBalancePaise) }}</strong>
+        <small>Opening balance plus ledger activity</small>
+      </article>
+      <article class="account-metric-card">
+        <span>Opening balance</span>
+        <strong>{{ formatMoney(accountSummary.account.openingBalancePaise) }}</strong>
+        <small>As of {{ accountSummary.account.openingDate }}</small>
+      </article>
+      <article class="account-metric-card">
+        <span>Total incoming</span>
+        <strong class="metric-incoming">{{ formatMoney(accountSummary.totalIncomingPaise) }}</strong>
+        <small>For the selected date range</small>
+      </article>
+      <article class="account-metric-card">
+        <span>Total outgoing</span>
+        <strong class="metric-outgoing">{{ formatMoney(accountSummary.totalOutgoingPaise) }}</strong>
+        <small>For the selected date range</small>
+      </article>
+    </div>
+
+    @if (error()) {
+      <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+    }
+
+    <section class="account-history-panel">
+      <div class="account-history-header">
+        <div>
+          <h2>Activity &amp; transaction history</h2>
+          <p>Transfers are shown as incoming or outgoing for this account, not as income or spending.</p>
+        </div>
+        <span class="history-count">{{ history().length }} {{ history().length === 1 ? 'entry' : 'entries' }}</span>
+      </div>
+
+      <div class="account-date-filters">
+        <label>From <input type="date" [value]="fromDate()" (input)="updateFromDate($event)" /></label>
+        <label>To <input type="date" [value]="toDate()" (input)="updateToDate($event)" /></label>
+        <button class="button button-outline" type="button" (click)="load()">Apply dates</button>
+        @if (fromDate() || toDate()) {
+          <button class="clear-filter-button" type="button" (click)="clearFilters()">Clear</button>
+        }
+      </div>
+      @if (filterError()) {
+        <div class="account-alert account-alert-error" role="alert">{{ filterError() }}</div>
+      }
+
+      @if (history().length === 0) {
+        <div class="account-history-empty">No activity in this date range.</div>
+      } @else {
+        <div class="account-history-list">
+          @for (item of history(); track item.entry.id) {
+            <article class="account-history-row">
+              <span class="history-type-icon" [class.history-incoming]="item.entry.amountPaise > 0" [class.history-outgoing]="item.entry.amountPaise < 0">
+                {{ item.entry.amountPaise > 0 ? '↓' : '↑' }}
+              </span>
+              <div class="history-description">
+                <strong>{{ item.transaction.description }}</strong>
+                <span>{{ transactionType(item.transaction.type) }} · {{ formatDate(item.entry.occurredAt) }}</span>
+              </div>
+              <strong class="history-amount" [class.metric-incoming]="item.entry.amountPaise > 0" [class.metric-outgoing]="item.entry.amountPaise < 0">
+                {{ item.entry.amountPaise > 0 ? '+' : '' }}{{ formatMoney(item.entry.amountPaise) }}
+              </strong>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</section>

@@ -1,0 +1,56 @@
+<section class="savings-details-page">
+  <a class="back-link" routerLink="/savings"><svg lucideArrowLeft aria-hidden="true"></svg>Back to savings goals</a>
+  @if (error()) { <div class="account-alert account-alert-error" role="alert">{{ error() }}</div> }
+  @if (success()) { <div class="account-alert account-alert-success" role="status">{{ success() }}</div> }
+  @if (loading()) { <div class="savings-empty" role="status">Loading goal…</div> }
+  @else if (details(); as item) {
+    <header class="savings-details-heading">
+      <div><p class="eyebrow">SAVINGS GOAL · {{ item.goal.status | uppercase }}</p><h1>{{ item.goal.name }}</h1><p class="page-subtitle">{{ item.goal.targetDate ? 'Target date · ' + date(item.goal.targetDate) : 'No target date set' }}</p></div>
+      <div class="savings-details-actions">
+        @if (item.goal.status !== 'archived') {
+          <a class="button button-outline" [routerLink]="['/savings', item.goal.id, 'edit']"><svg lucidePencil aria-hidden="true"></svg>Edit goal</a>
+        }
+        @if (item.goal.status === 'completed') {
+          <button class="button button-outline" type="button" [disabled]="archiving()" (click)="archive()"><svg lucideArchive aria-hidden="true"></svg>{{ archiving() ? 'Archiving…' : 'Archive goal' }}</button>
+        }
+      </div>
+    </header>
+    <article class="savings-detail-card">
+      <div class="savings-detail-amount"><span>Saved so far</span><strong>{{ amount(item.savedPaise) }}</strong><small>of {{ amount(item.goal.targetAmountPaise) }} target</small></div>
+      <div class="savings-progress-track" role="progressbar" [attr.aria-valuenow]="item.percentComplete" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="item.goal.name + ' progress'"><span [style.width.%]="percentage(item.percentComplete)"></span></div>
+      <div class="savings-card-bottom"><span>{{ item.percentComplete | number:'1.0-0' }}% complete</span><strong>{{ amount(item.remainingPaise) }} remaining</strong></div>
+      @if (item.goal.notes) { <p class="savings-detail-notes">{{ item.goal.notes }}</p> }
+    </article>
+    @if (item.goal.status === 'archived') {
+      <div class="savings-ledger-note" role="status">This goal is archived. Its history remains available, but new movements are disabled.</div>
+    } @else {
+    <section class="savings-movement-card">
+      <div class="loan-section-heading"><div><h2>Record a movement</h2><p>Allocate funds from an account or withdraw saved funds back to an account.</p></div></div>
+      <form class="savings-movement-form" [formGroup]="form">
+        <div><label class="field-label" for="movement-amount">Amount <span>*</span></label><div class="loan-currency-field"><span>₹</span><input id="movement-amount" type="text" inputmode="decimal" formControlName="amount" placeholder="0.00" /></div></div>
+        <div><label class="field-label" for="movement-account">Account <span>*</span></label><select id="movement-account" class="text-field" formControlName="accountId"><option value="">Select an account</option>@for (account of accounts(); track account.id) { <option [value]="account.id" [disabled]="account.status === 'archived'">{{ account.name }}{{ account.status === 'archived' ? ' · Archived' : '' }}</option> }</select></div>
+        <div><label class="field-label" for="movement-date">Date <span>*</span></label><input id="movement-date" class="text-field" type="date" formControlName="occurredAt" /></div>
+        <div><label class="field-label" for="movement-notes">Note <span class="optional-label">Optional</span></label><input id="movement-notes" class="text-field" formControlName="notes" maxlength="2000" placeholder="Add context" /></div>
+        <div class="savings-movement-actions"><button class="button button-primary" type="button" [disabled]="saving()" (click)="move('contribution')"><svg lucideArrowUpRight aria-hidden="true"></svg>Contribute</button><button class="button button-outline" type="button" [disabled]="saving()" (click)="move('withdrawal')"><svg lucideArrowDownLeft aria-hidden="true"></svg>Withdraw</button></div>
+      </form>
+      <p class="savings-ledger-note">Contributions debit the selected account; withdrawals credit it. These allocations are not classified as income or expenses.</p>
+    </section>
+    }
+    <section class="savings-history-card">
+      <div class="loan-section-heading"><div><h2>Movement history</h2><p>{{ item.history.length }} recorded {{ item.history.length === 1 ? 'movement' : 'movements' }}</p></div></div>
+      @if (item.history.length) {
+        <div class="savings-history-list">
+          @for (history of item.history; track history.entry.id) {
+            <div class="savings-history-row">
+              <span class="savings-history-mark" [class.savings-history-withdrawal]="history.entry.amountPaise < 0">
+                @if (history.entry.amountPaise > 0) { <svg lucideArrowUpRight aria-hidden="true"></svg> } @else { <svg lucideArrowDownLeft aria-hidden="true"></svg> }
+              </span>
+              <span class="savings-history-copy"><strong>{{ history.entry.amountPaise > 0 ? 'Contribution' : 'Withdrawal' }}</strong><small>{{ date(history.entry.occurredAt) }} · {{ accountName(history.entry.accountId) }}{{ history.transaction.notes ? ' · ' + history.transaction.notes : '' }}</small></span>
+              <strong [class.savings-history-negative]="history.entry.amountPaise < 0">{{ history.entry.amountPaise < 0 ? '−' : '+' }}{{ amount(history.entry.amountPaise < 0 ? -history.entry.amountPaise : history.entry.amountPaise) }}</strong>
+            </div>
+          }
+        </div>
+      } @else { <div class="savings-history-empty">No contributions or withdrawals yet.</div> }
+    </section>
+  }
+</section>

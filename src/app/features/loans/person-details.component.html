@@ -1,0 +1,78 @@
+<section class="loan-person-details-page">
+  <a class="back-link" routerLink="/loans"><svg lucideArrowLeft aria-hidden="true"></svg>Back to loans</a>
+
+  @if (loading()) {
+    <div class="loan-empty-state" role="status">Loading person details…</div>
+  } @else if (error() && !person()) {
+    <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+  } @else if (person(); as details) {
+    @if (error()) {
+      <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+    }
+
+    <article class="loan-person-detail-card">
+      <header class="loan-detail-header">
+        <div>
+          <p class="eyebrow">PERSONAL RELATIONSHIP</p>
+          <div class="loan-detail-title-row">
+            <h1>{{ details.name }}</h1>
+            <span class="loan-status" [class.loan-status-review]="details.status === 'archived'">
+              {{ details.status === 'active' ? 'Active' : 'Archived' }}
+            </span>
+          </div>
+          <p class="page-subtitle">{{ details.phoneNumber || 'No phone number added' }} · Added {{ formatDate(details.createdAt) }}</p>
+        </div>
+        <div class="loan-detail-actions">
+          <a class="button button-outline" [routerLink]="['/loans/people', details.id, 'edit']">
+            <svg lucidePencil aria-hidden="true"></svg>Edit
+          </a>
+          @if (details.status === 'active') {
+            <button class="button button-outline" type="button" (click)="archive()">
+              <svg lucideArchive aria-hidden="true"></svg>Archive
+            </button>
+          }
+        </div>
+      </header>
+
+      @if (details.notes) {
+        <div class="loan-detail-notes">
+          <h2>Notes</h2>
+          <p>{{ details.notes }}</p>
+        </div>
+      }
+    </article>
+
+    <section class="loan-people-panel loan-related-loans">
+      <div class="loan-section-heading">
+        <div>
+          <h2>Loans with {{ details.name }}</h2>
+          <p>{{ loanCount() }} {{ loanCount() === 1 ? 'loan' : 'loans' }} · History remains available if this person is archived.</p>
+        </div>
+        @if (details.status === 'active') {
+          <a class="button button-primary" [routerLink]="['/loans/new']">Record a loan</a>
+        }
+      </div>
+
+      @if (loans().length) {
+        <div class="loan-related-list">
+          @for (summary of loans(); track summary.loan.id) {
+            <a class="loan-related-row" [routerLink]="['/loans', summary.loan.id]">
+              <span>
+                <strong>{{ directionLabel(summary.loan.direction) }}</strong>
+                <small>{{ accountName(summary) }} · {{ loanDate(summary) }}</small>
+              </span>
+              <span class="loan-status" [class.loan-status-overdue]="summary.status === 'overdue'" [class.loan-status-settled]="summary.status === 'settled'" [class.loan-status-review]="summary.status === 'needs-review'">
+                {{ statusLabel(summary.status) }}
+              </span>
+              <strong class="loan-row-amount" [class.loan-positive]="summary.loan.direction === 'lent'" [class.loan-negative]="summary.loan.direction === 'borrowed'">
+                {{ outstandingLabel(summary) }}
+              </strong>
+            </a>
+          }
+        </div>
+      } @else {
+        <div class="loan-history-empty">No loans are linked to this person yet.</div>
+      }
+    </section>
+  }
+</section>

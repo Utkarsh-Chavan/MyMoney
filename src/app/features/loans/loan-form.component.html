@@ -1,0 +1,116 @@
+<section class="loan-form-page">
+  <a class="back-link" routerLink="/loans"><svg lucideArrowLeft aria-hidden="true"></svg>Back to loans</a>
+  <div class="loan-form-layout">
+    <aside class="loan-form-intro">
+      <p class="eyebrow">{{ editing() ? 'LOAN DETAILS' : 'LOAN MANAGEMENT' }}</p>
+      <h1>{{ editing() ? 'Edit loan' : 'Record a loan' }}</h1>
+      <p>Keep track of money you lend or borrow without recording it as income or expenditure.</p>
+      <div class="loan-private-note">
+        <svg lucideCircleCheck aria-hidden="true"></svg>
+        <span>Loan and repayment activity is stored on this device and included in your account ledger.</span>
+      </div>
+    </aside>
+
+    @if (loading()) {
+      <div class="loan-form-card" role="status">Loading loan…</div>
+    } @else {
+      <form class="loan-form-card" [formGroup]="form" (ngSubmit)="save()">
+        @if (error()) {
+          <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+        }
+
+        @if (hasRepayments()) {
+          <div class="account-alert account-alert-info" role="status">
+            Principal, direction, person, account and start date are locked after repayments. You can still update the due date and notes.
+          </div>
+        }
+
+        <div class="loan-form-section">
+          <h2>Loan information</h2>
+          <p>Choose who is involved and where the money moved.</p>
+        </div>
+
+        <fieldset class="loan-direction-picker" [disabled]="hasRepayments()">
+          <legend>Direction <span>*</span></legend>
+          <label [class.selected-lent]="form.controls.direction.value === 'lent'">
+            <input type="radio" formControlName="direction" value="lent" />
+            <span>Money lent</span>
+            <small>Someone owes you</small>
+          </label>
+          <label [class.selected-borrowed]="form.controls.direction.value === 'borrowed'">
+            <input type="radio" formControlName="direction" value="borrowed" />
+            <span>Money borrowed</span>
+            <small>You owe someone</small>
+          </label>
+        </fieldset>
+
+        <label class="field-label" for="loan-person">Person <span>*</span></label>
+        <div class="loan-select-row">
+          <select id="loan-person" class="text-field" formControlName="personId" required>
+            <option value="">Select a person</option>
+            @for (person of people(); track person.id) {
+              <option
+                [value]="person.id"
+                [disabled]="person.status === 'archived' && person.id !== form.controls.personId.value"
+              >
+                {{ person.name }}{{ getPersonStatus(person) }}
+              </option>
+            }
+          </select>
+          @if (!editing()) {
+            <a class="button button-outline" routerLink="/loans/people/new">Add</a>
+          }
+        </div>
+
+        <label class="field-label" for="loan-amount">Amount <span>*</span></label>
+        <div class="loan-currency-field">
+          <span>₹</span>
+          <input id="loan-amount" type="text" inputmode="decimal" formControlName="amount" placeholder="0.00" required />
+        </div>
+        <span class="field-hint">Stored as integer paise. Repayments are recorded separately.</span>
+
+        <label class="field-label" for="loan-account">Account <span>*</span></label>
+        <select id="loan-account" class="text-field" formControlName="accountId" required>
+          <option value="">Select an account</option>
+          @for (account of accounts(); track account.id) {
+            <option
+              [value]="account.id"
+              [disabled]="account.status === 'archived' && account.id !== form.controls.accountId.value"
+            >
+              {{ account.name }}{{ getAccountStatus(account) }}
+            </option>
+          }
+        </select>
+
+        <div class="form-two-columns">
+          <div>
+            <label class="field-label" for="loan-start-date">Date <span>*</span></label>
+            <input id="loan-start-date" class="text-field" type="date" formControlName="startedAt" required />
+          </div>
+          <div>
+            <label class="field-label" for="loan-due-date">Due date <span class="optional-label">Optional</span></label>
+            <input id="loan-due-date" class="text-field" type="date" formControlName="dueDate" />
+          </div>
+        </div>
+
+        <label class="field-label" for="loan-description">Description <span class="optional-label">Optional</span></label>
+        <input id="loan-description" class="text-field" formControlName="description" maxlength="160" placeholder="e.g. Shared travel costs" />
+
+        <label class="field-label" for="loan-notes">Notes <span class="optional-label">Optional</span></label>
+        <textarea id="loan-notes" class="text-field loan-notes-field" formControlName="notes" maxlength="2000" rows="4" placeholder="Add any useful context"></textarea>
+
+        <div class="loan-ledger-note">
+          <strong>How this affects your accounts</strong>
+          <span>{{ form.controls.direction.value === 'lent' ? 'Lending decreases the selected account balance.' : 'Borrowing increases the selected account balance.' }} It does not count as ordinary income or expenditure.</span>
+        </div>
+
+        <div class="account-form-actions">
+          <a class="button button-outline" routerLink="/loans">Cancel</a>
+          <button class="button button-primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : editing() ? 'Save changes' : 'Record loan' }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</section>

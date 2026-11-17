@@ -1,0 +1,99 @@
+<section class="accounts-page">
+  <div class="page-heading accounts-heading">
+    <div>
+      <p class="eyebrow">YOUR FINANCES</p>
+      <h1>Accounts</h1>
+      <p class="page-subtitle">Keep track of your bank, cash and digital wallet balances.</p>
+    </div>
+    <div class="accounts-actions">
+      <a class="button button-outline" routerLink="/accounts/transfer">
+        <svg lucideArrowLeftRight aria-hidden="true"></svg>
+        Transfer
+      </a>
+      <a class="button button-primary" routerLink="/accounts/new">
+        <svg lucidePlus aria-hidden="true"></svg>
+        Add account
+      </a>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+  }
+
+  <div class="account-overview">
+    <div class="account-overview-icon"><svg lucideLandmark aria-hidden="true"></svg></div>
+    <div>
+      <span>{{ status() === 'active' ? 'Active accounts' : 'Archived accounts' }}</span>
+      <strong>{{ accountSummaries().length }}</strong>
+    </div>
+    <div class="account-overview-note">Balances are calculated from each opening balance and its ledger entries.</div>
+  </div>
+
+  <div class="account-list-toolbar">
+    <div>
+      <h2>{{ status() === 'active' ? 'Your accounts' : 'Archived accounts' }}</h2>
+      <p>All amounts are shown in Indian rupees.</p>
+    </div>
+    <div class="account-tabs" aria-label="Account status filter">
+      <button type="button" [class.selected]="status() === 'active'" (click)="setStatus('active')">Active</button>
+      <button type="button" [class.selected]="status() === 'archived'" (click)="setStatus('archived')">Archived</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="account-empty-state" role="status">Loading accounts…</div>
+  } @else if (accountSummaries().length === 0) {
+    <div class="account-empty-state">
+      <div class="account-empty-symbol"><svg lucideWallet aria-hidden="true"></svg></div>
+      <h2>{{ status() === 'active' ? 'A good place to start' : 'No archived accounts' }}</h2>
+      <p>
+        {{ status() === 'active'
+          ? 'Add an account to see its balance and start organizing your money.'
+          : 'Accounts you archive will remain here with their complete history.' }}
+      </p>
+      @if (status() === 'active') {
+        <a class="button button-primary" routerLink="/accounts/new">Add your first account</a>
+      }
+    </div>
+  } @else {
+    <div class="account-card-grid">
+      @for (summary of accountSummaries(); track summary.account.id) {
+        <article class="account-card">
+          <div class="account-card-top">
+            <div class="account-kind-icon" [class.kind-wallet]="summary.account.type === 'digital-wallet' || summary.account.type === 'cash-wallet'">
+              @if (summary.account.type === 'savings-bank' || summary.account.type === 'current-bank') {
+                <svg lucideLandmark aria-hidden="true"></svg>
+              } @else {
+                <svg lucideWallet aria-hidden="true"></svg>
+              }
+            </div>
+            <span class="account-status-badge" [class.badge-archived]="summary.account.status === 'archived'">
+              {{ summary.account.status === 'active' ? 'Active' : 'Archived' }}
+            </span>
+          </div>
+          <p class="account-type-label">{{ typeLabel(summary.account.type) }}</p>
+          <h3>{{ summary.account.name }}</h3>
+          <p class="account-provider">{{ summary.account.institution || 'Personal account' }}</p>
+          <div class="account-balance-label">Current balance</div>
+          <div class="account-balance-value">{{ formatMoney(summary.currentBalancePaise) }}</div>
+          <div class="account-opening">Opening balance <strong>{{ formatMoney(summary.account.openingBalancePaise) }}</strong></div>
+          <div class="account-card-actions">
+            <a class="button button-outline" [routerLink]="['/accounts', summary.account.id]">View details</a>
+            @if (summary.account.status === 'active') {
+              <button
+                class="account-icon-button"
+                type="button"
+                [attr.aria-label]="'Archive ' + summary.account.name"
+                title="Archive account"
+                (click)="archiveAccount(summary.account.id)"
+              >
+                <svg lucideArchive aria-hidden="true"></svg>
+              </button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,120 @@
+<section class="transaction-form-page">
+  <a class="back-link" routerLink="/transactions"><svg lucideArrowLeft aria-hidden="true"></svg>Back to transactions</a>
+
+  <div class="transaction-form-layout">
+    <aside class="transaction-form-aside">
+      <p class="eyebrow">{{ quickEntry ? 'QUICK ENTRY' : editing ? 'TRANSACTION DETAILS' : 'NEW TRANSACTION' }}</p>
+      <h1>{{ editing ? 'Edit transaction' : quickEntry ? 'Quick add' : 'Add transaction' }}</h1>
+      <p>{{ quickEntry ? 'Add income or an expense in just a few taps.' : 'Record the details now; your account balance is calculated from the ledger.' }}</p>
+      @if (!quickEntry) {
+        <a class="text-link category-shortcut" routerLink="/transactions/categories">Manage categories <span aria-hidden="true">→</span></a>
+      }
+      <div class="transaction-local-note">
+        <svg lucideCircleAlert aria-hidden="true"></svg>
+        <span>Amounts are saved as integer paise. No bank credentials are requested or stored.</span>
+      </div>
+    </aside>
+
+    @if (loading()) {
+      <div class="transaction-form-card" role="status">Loading transaction form…</div>
+    } @else {
+      <form class="transaction-form-card" (ngSubmit)="save()">
+        @if (error()) {
+          <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+        }
+        @if (formAccounts().length === 0 && !editing) {
+          <div class="account-alert account-alert-info">Create an active account before adding transactions.</div>
+          <a class="button button-outline" routerLink="/accounts/new">Add an account</a>
+        } @else {
+          <div class="transaction-type-picker" role="group" aria-label="Transaction type">
+            <button type="button" [class.selected-expense]="type() === 'expense'" (click)="setType('expense')">Expense</button>
+            <button type="button" [class.selected-income]="type() === 'income'" (click)="setType('income')">Income</button>
+          </div>
+
+          <label class="field-label" for="transaction-amount">Amount <span>*</span></label>
+          <div class="transaction-amount-field">
+            <span>₹</span>
+            <input
+              id="transaction-amount"
+              name="amount"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              [(ngModel)]="amount"
+              placeholder="0.00"
+              required
+            />
+          </div>
+
+          <div class="form-two-columns transaction-required-fields">
+            <div>
+              <label class="field-label" for="transaction-account">Account <span>*</span></label>
+              <select id="transaction-account" class="text-field" name="accountId" [(ngModel)]="accountId" required>
+                <option value="" disabled>Select account</option>
+                @for (account of formAccounts(); track account.id) {
+                  <option [value]="account.id">{{ account.name }}{{ account.status === 'archived' ? ' (archived)' : '' }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="transaction-category">Category <span>*</span></label>
+              <select id="transaction-category" class="text-field" name="categoryId" [(ngModel)]="categoryId" required>
+                <option value="" disabled>Select category</option>
+                @for (category of selectedCategories(); track category.id) {
+                  <option [value]="category.id">{{ category.name }}{{ category.status === 'archived' ? ' (archived)' : '' }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="field-label" for="transaction-date">Date <span>*</span></label>
+            <div class="date-input-wrap">
+              <svg lucideCalendarDays aria-hidden="true"></svg>
+              <input id="transaction-date" class="text-field" name="occurredOn" type="date" [(ngModel)]="occurredOn" required />
+            </div>
+          </div>
+
+          @if (!quickEntry) {
+            <div class="detailed-fields">
+              <label class="field-label" for="transaction-description">Description <span class="optional-label">Optional</span></label>
+              <input id="transaction-description" class="text-field" name="description" [(ngModel)]="description" maxlength="160" placeholder="Add a short description" />
+
+              <label class="field-label" for="transaction-notes">Notes <span class="optional-label">Optional</span></label>
+              <textarea id="transaction-notes" class="text-field transaction-notes" name="notes" [(ngModel)]="notes" maxlength="2000" rows="3" placeholder="Add any useful details"></textarea>
+
+              <div class="form-two-columns">
+                <div>
+                  <label class="field-label" for="transaction-payment-method">Payment method <span class="optional-label">Optional</span></label>
+                  <select id="transaction-payment-method" class="text-field" name="paymentMethod" [(ngModel)]="paymentMethod">
+                    <option value="">Not specified</option>
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="bank-transfer">Bank transfer</option>
+                    <option value="upi">UPI</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label" for="transaction-tags">Tags <span class="optional-label">Optional</span></label>
+                  <div class="tags-input-wrap">
+                    <svg lucideTags aria-hidden="true"></svg>
+                    <input id="transaction-tags" class="text-field" name="tags" [(ngModel)]="tagsText" placeholder="Work, monthly" />
+                  </div>
+                </div>
+              </div>
+              <span class="field-hint">Separate tags with commas. Up to 20 tags are allowed.</span>
+            </div>
+          }
+
+          <div class="account-form-actions">
+            <a class="button button-outline" routerLink="/transactions">Cancel</a>
+            <button class="button button-primary" type="submit" [disabled]="saving() || formAccounts().length === 0">
+              {{ saving() ? 'Saving…' : editing ? 'Save changes' : quickEntry ? 'Save transaction' : 'Add transaction' }}
+            </button>
+          </div>
+        }
+      </form>
+    }
+  </div>
+</section>

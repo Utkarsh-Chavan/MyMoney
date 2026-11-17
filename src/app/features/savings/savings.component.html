@@ -1,0 +1,83 @@
+<section class="savings-page">
+  <header class="page-heading savings-heading">
+    <div>
+      <p class="eyebrow">SAVE WITH PURPOSE</p>
+      <h1>Savings goals</h1>
+      <p class="page-subtitle">Track planned savings allocations separately from everyday income and expenses.</p>
+    </div>
+    <a class="button button-primary" routerLink="/savings/new"><svg lucidePlus aria-hidden="true"></svg>New goal</a>
+  </header>
+  @if (error()) { <div class="account-alert account-alert-error" role="alert">{{ error() }}</div> }
+  @if (loading()) { <div class="savings-empty" role="status">Loading savings goals…</div> }
+  @else if (goals().length === 0) {
+    <div class="savings-empty">
+      <span class="savings-empty-icon"><svg lucideTarget aria-hidden="true"></svg></span>
+      <h2>Choose something to save for</h2>
+      <p>Create a goal and record contributions from your accounts. Withdrawals return funds to an account.</p>
+      <a class="button button-primary" routerLink="/savings/new">Create a savings goal</a>
+    </div>
+  } @else {
+    <section class="savings-summary-grid" aria-label="Savings totals">
+      <article class="savings-summary-card"><span>Goal targets</span><strong>{{ amount(totalTargetPaise()) }}</strong></article>
+      <article class="savings-summary-card"><span>Accumulated savings</span><strong>{{ amount(totalSavedPaise()) }}</strong></article>
+      <article class="savings-summary-card"><span>Remaining to targets</span><strong>{{ amount(totalRemainingPaise()) }}</strong></article>
+      <article class="savings-summary-card"><span>Completed goals</span><strong>{{ completedGoals().length }}</strong></article>
+    </section>
+
+    @if (upcomingGoals().length) {
+      <section class="savings-upcoming" aria-label="Upcoming savings goal dates">
+        <h2>Upcoming target dates</h2>
+        <div class="savings-upcoming-list">
+          @for (item of upcomingGoals(); track item.goal.id) {
+            <a [routerLink]="['/savings', item.goal.id]"><strong>{{ item.goal.name }}</strong><span>{{ date(item.goal.targetDate!) }}</span></a>
+          }
+        </div>
+      </section>
+    }
+
+    @if (currentGoals().length) {
+      <section class="savings-section" aria-label="Current and completed savings goals">
+        <h2>Your goals</h2>
+        <div class="savings-grid">
+          @for (item of currentGoals(); track item.goal.id) {
+            <article class="savings-card savings-card-wrapper" [class.savings-card-completed]="item.goal.status === 'completed'">
+              <a class="savings-card-content" [routerLink]="['/savings', item.goal.id]">
+                <div class="savings-card-top">
+                  <span class="savings-target-icon"><svg lucideTarget aria-hidden="true"></svg></span>
+                  <span class="savings-target-date">{{ item.goal.status === 'completed' ? 'Completed' : item.goal.targetDate ? 'Target ' + date(item.goal.targetDate) : 'No target date' }}</span>
+                </div>
+                <h3>{{ item.goal.name }}</h3>
+                <div class="savings-amount-row"><strong>{{ amount(item.savedPaise) }}</strong><span>of {{ amount(item.goal.targetAmountPaise) }}</span></div>
+                <div class="savings-progress-track" role="progressbar" [attr.aria-valuenow]="item.percentComplete" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="item.goal.name + ' progress'"><span [style.width.%]="percentage(item.percentComplete)"></span></div>
+                <div class="savings-card-bottom"><span>{{ item.percentComplete | number:'1.0-0' }}% saved</span><strong>{{ amount(item.remainingPaise) }} to go</strong></div>
+                <div class="savings-card-link">View goal &amp; history <svg lucideArrowUpRight aria-hidden="true"></svg></div>
+              </a>
+              @if (item.goal.status === 'completed') {
+                <button class="savings-archive-button" type="button" (click)="archive(item)">
+                  <svg lucideArchive aria-hidden="true"></svg>Archive goal
+                </button>
+              }
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    @if (archivedGoals().length) {
+      <section class="savings-section" aria-label="Archived savings goals">
+        <h2>Archived goals</h2>
+        <div class="savings-grid">
+          @for (item of archivedGoals(); track item.goal.id) {
+            <a class="savings-card savings-card-archived" [routerLink]="['/savings', item.goal.id]">
+              <div class="savings-card-top"><span class="savings-target-icon"><svg lucideTarget aria-hidden="true"></svg></span><span class="savings-target-date">Archived</span></div>
+              <h3>{{ item.goal.name }}</h3>
+              <div class="savings-amount-row"><strong>{{ amount(item.savedPaise) }}</strong><span>of {{ amount(item.goal.targetAmountPaise) }}</span></div>
+              <div class="savings-card-link">View history <svg lucideArrowUpRight aria-hidden="true"></svg></div>
+            </a>
+          }
+        </div>
+      </section>
+    }
+    <p class="savings-footnote">Contributions reduce the selected account balance; withdrawals credit the account. Neither is recorded as income or expense.</p>
+  }
+</section>

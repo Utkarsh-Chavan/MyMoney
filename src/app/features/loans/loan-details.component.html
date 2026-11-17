@@ -1,0 +1,148 @@
+<section class="loan-details-page">
+  <a class="back-link" routerLink="/loans"><svg lucideArrowLeft aria-hidden="true"></svg>Back to loans</a>
+
+  @if (loading()) {
+    <div class="loan-empty-state" role="status">Loading loan details…</div>
+  } @else if (error() && !summary()) {
+    <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+  } @else if (summary(); as details) {
+    @if (error()) {
+      <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+    }
+
+    <article class="loan-detail-card">
+      <header class="loan-detail-header">
+        <div>
+          <p class="eyebrow">{{ directionLabel(details.loan.direction) }}</p>
+          <div class="loan-detail-title-row">
+            <h1>{{ personName(details) }}</h1>
+            <span class="loan-status" [class.loan-status-overdue]="details.status === 'overdue'" [class.loan-status-settled]="details.status === 'settled'" [class.loan-status-review]="details.status === 'needs-review'">
+              {{ statusLabel(details.status) }}
+            </span>
+          </div>
+          <p class="page-subtitle">{{ details.loan.description || 'Personal loan record' }}</p>
+        </div>
+        <div class="loan-detail-actions">
+          @if (details.person) {
+            <a class="button button-outline" [routerLink]="['/loans/people', details.person.id]">View person</a>
+          }
+          @if (isManaged()) {
+            <a class="button button-outline" [routerLink]="['/loans', details.loan.id, 'edit']">
+              <svg lucidePencil aria-hidden="true"></svg>Edit
+            </a>
+          }
+          @if (canDelete()) {
+            <button class="button button-danger-outline" type="button" (click)="deleteLoan()">
+              <svg lucideTrash2 aria-hidden="true"></svg>Delete
+            </button>
+          }
+        </div>
+      </header>
+
+      @if (details.status === 'needs-review') {
+        <div class="account-alert account-alert-info" role="status">
+          This loan predates the current loan format. Its recorded activity remains visible, but principal or account details are incomplete, so it cannot be edited or repaid here.
+        </div>
+      }
+
+      <div class="loan-detail-balance">
+        <span>Outstanding balance</span>
+        <strong>{{ outstandingLabel(details) }}</strong>
+        <small>{{ details.loan.direction === 'lent' ? 'Receivable · not ordinary income' : 'Payable · not ordinary expenditure' }}</small>
+      </div>
+
+      <div class="loan-detail-metrics">
+        <div><span>Original amount</span><strong>{{ amountLabel(details.principalPaise) }}</strong></div>
+        <div><span>Total repaid</span><strong>{{ amountLabel(details.repaidPaise) }}</strong></div>
+        <div><span>Account</span><strong>{{ accountName('accountId' in details.loan ? details.loan.accountId : undefined) }}</strong></div>
+        <div><span>Loan date</span><strong>{{ loanDate(details) }}</strong></div>
+        <div><span>Due date</span><strong>{{ dueDate(details) }}</strong></div>
+      </div>
+
+      @if (details.loan.notes) {
+        <section class="loan-detail-notes">
+          <h2>Notes</h2>
+          <p>{{ details.loan.notes }}</p>
+        </section>
+      }
+    </article>
+
+    @if (isManaged() && details.outstandingPaise > 0) {
+      <section class="loan-repayment-card">
+        <div class="loan-section-heading">
+          <div>
+            <h2>Record a repayment</h2>
+            <p>Outstanding amount: {{ formatMoney(details.outstandingPaise) }}</p>
+          </div>
+        </div>
+        <form [formGroup]="repaymentForm" (ngSubmit)="recordRepayment()">
+          <div class="loan-repayment-grid">
+            <label>
+              <span>Amount <b>*</b></span>
+              <div class="loan-currency-field"><span>₹</span><input type="text" inputmode="decimal" formControlName="amount" placeholder="0.00" required /></div>
+            </label>
+            <label>
+              <span>Account <b>*</b></span>
+              <select class="text-field" formControlName="accountId" required>
+                <option value="">Select an account</option>
+                @for (account of accounts(); track account.id) {
+                  @if (account.status === 'active') {
+                    <option [value]="account.id">{{ account.name }}</option>
+                  }
+                }
+              </select>
+            </label>
+            <label>
+              <span>Repayment date <b>*</b></span>
+              <input class="text-field" type="date" formControlName="occurredAt" required />
+            </label>
+            <label class="loan-repayment-notes">
+              <span>Notes <small>Optional</small></span>
+              <input class="text-field" formControlName="notes" maxlength="2000" placeholder="Optional details" />
+            </label>
+          </div>
+          <div class="loan-repayment-footer">
+            <small>Partial repayments are supported. Overpayments are rejected.</small>
+            <button class="button button-primary" type="submit" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Record repayment' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+
+    <section class="loan-history-panel">
+      <div class="loan-section-heading">
+        <div>
+          <h2>Repayment history</h2>
+          <p>Principal and each account movement are kept in the ledger.</p>
+        </div>
+        <span class="loan-history-count">{{ history().length }} entries</span>
+      </div>
+      @if (history().length === 0) {
+        <div class="loan-history-empty">No loan activity is recorded.</div>
+      } @else {
+        <div class="loan-history-list">
+          @for (item of history(); track item.entry.id) {
+            <article class="loan-history-row">
+              <span class="loan-history-mark" [class.loan-history-repayment]="item.entry.outstandingChangePaise < 0">
+                {{ item.entry.outstandingChangePaise > 0 ? '+' : '−' }}
+              </span>
+              <span class="loan-history-copy">
+                <strong>{{ historyLabel(item) }}</strong>
+                <small>{{ formatDate(item.entry.occurredAt) }} · {{ item.account?.name ?? 'Account unavailable' }}</small>
+                @if (item.transaction.notes) {
+                  <small>{{ item.transaction.notes }}</small>
+                }
+              </span>
+              <a class="loan-history-transaction" [routerLink]="['/transactions', item.transaction.id]">View entry</a>
+              <strong class="loan-history-amount" [class.loan-positive]="item.entry.outstandingChangePaise > 0">
+                {{ historyAmount(item) }}
+              </strong>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</section>

@@ -1,0 +1,57 @@
+.budgets-page, .budget-form-page { width: 100%; }
+.budget-heading { align-items: flex-end; }
+.budget-heading .button svg { width: 15px; height: 15px; }
+.budget-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+.budget-card, .budget-empty, .budget-form-card { min-width: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+.budget-card { padding: 18px; }
+.budget-card-archived { opacity: .73; }
+.budget-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.budget-category { color: var(--muted); font-size: 9px; font-weight: 580; }
+.budget-card h2 { overflow: hidden; margin: 6px 0 0; font-size: 15px; font-weight: 660; text-overflow: ellipsis; white-space: nowrap; }
+.budget-card-actions { display: flex; align-items: center; gap: 4px; }
+.budget-card-actions .icon-button { display: grid; min-width: 30px; height: 30px; place-items: center; padding: 0 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); font: inherit; font-size: 9px; cursor: pointer; text-decoration: none; }
+.budget-card-actions .icon-button:hover { border-color: var(--accent); color: var(--accent); }
+.budget-card-actions svg { width: 14px; height: 14px; }
+.budget-archived-label { color: var(--muted); font-size: 9px; }
+.budget-spending-row { display: flex; align-items: baseline; gap: 6px; margin-top: 21px; }
+.budget-spending-row > strong { font-size: 20px; font-weight: 690; letter-spacing: -.5px; }
+.budget-spending-row > span { color: var(--muted); font-size: 10px; }
+.budget-spending-row .budget-percent { margin-left: auto; color: var(--text); font-weight: 650; }
+.budget-progress-track, .savings-progress-track { overflow: hidden; height: 7px; margin-top: 10px; border-radius: 99px; background: var(--surface-soft); }
+.budget-progress-track > span, .savings-progress-track > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .2s ease; }
+.budget-progress-track .budget-progress-over { background: var(--rose); }
+.budget-period-caption { margin-top: 9px; color: var(--muted); font-size: 9px; }
+.budget-alerts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line); color: var(--rose); }
+.budget-alerts svg { width: 14px; height: 14px; }
+.budget-alerts span { padding: 4px 7px; border-radius: 99px; background: color-mix(in srgb, var(--rose) 9%, var(--surface)); font-size: 8px; font-weight: 620; }
+.budget-footnote, .savings-footnote { margin-top: 15px; color: var(--muted); font-size: 9px; line-height: 1.6; }
+.budget-empty { display: flex; min-height: 270px; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+.budget-empty-icon { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 14px; background: var(--accent-soft); color: var(--accent); }
+.budget-empty-icon svg { width: 21px; height: 21px; }
+.budget-empty h2 { margin: 13px 0 5px; font-size: 15px; }
+.budget-empty p { max-width: 410px; margin: 0 0 15px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.budget-empty .button { min-height: 36px; font-size: 10px; }
+.budget-form-layout { display: grid; grid-template-columns: minmax(210px, .75fr) minmax(0, 1.25fr); align-items: start; gap: 30px; }
+.budget-form-intro { position: sticky; top: 100px; padding: 12px 3px; }
+.budget-form-intro h1 { margin: 0; font-size: clamp(25px, 3vw, 31px); font-weight: 680; letter-spacing: -1px; line-height: 1.2; }
+.budget-form-intro > p:not(.eyebrow) { margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.budget-form-card { padding: 24px; }
+.budget-form-card > .account-alert { margin-bottom: 12px; }
+.budget-days-input { display: flex; align-items: center; gap: 9px; }
+.budget-days-input .text-field { max-width: 150px; }
+.budget-days-input > span { color: var(--muted); font-size: 10px; }
+.budget-threshold-fieldset { min-width: 0; margin: 4px 0 15px; padding: 0; border: 0; }
+.budget-threshold-fieldset legend { padding: 0; }
+.budget-threshold-fieldset > p { margin: -5px 0 9px; color: var(--muted); font-size: 9px; line-height: 1.5; }
+.budget-threshold-options { display: flex; flex-wrap: wrap; gap: 7px; }
+.budget-threshold-options label { display: flex; align-items: center; gap: 6px; min-height: 35px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 10px; cursor: pointer; }
+.budget-threshold-options input { width: 14px; height: 14px; accent-color: var(--accent); }
+.budget-form-card .account-form-actions { margin-top: 22px; }
+@media (max-width: 1000px) { .budget-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .budget-heading { align-items: flex-start; }
+  .budget-grid { grid-template-columns: 1fr; }
+  .budget-form-layout { grid-template-columns: 1fr; gap: 14px; }
+  .budget-form-intro { position: static; padding: 0; }
+  .budget-form-card { padding: 18px; }
+}

@@ -1,0 +1,52 @@
+<section class="budget-form-page">
+  <a class="back-link" routerLink="/budgets"><svg lucideArrowLeft aria-hidden="true"></svg>Back to budgets</a>
+  <div class="budget-form-layout">
+    <aside class="budget-form-intro">
+      <p class="eyebrow">SPENDING PLAN</p>
+      <h1>{{ editing() ? 'Edit budget' : 'Create a budget' }}</h1>
+      <p>Set an overall monthly limit or track an expense category on a recurring period. Monthly periods follow your start date, with month ends safely clamped.</p>
+      <div class="loan-private-note"><svg lucideCircleCheck aria-hidden="true"></svg><span>Budgets use expense transactions only. Income, transfers, loan activity and savings allocations are excluded.</span></div>
+    </aside>
+    @if (loading()) { <div class="budget-form-card" role="status">Loading…</div> } @else {
+      <form class="budget-form-card" [formGroup]="form" (ngSubmit)="save()">
+        @if (error()) { <div class="account-alert account-alert-error" role="alert">{{ error() }}</div> }
+        <label class="field-label" for="budget-name">Budget name <span>*</span></label>
+        <input id="budget-name" class="text-field" formControlName="name" maxlength="80" placeholder="e.g. Groceries" required />
+        <label class="field-label" for="budget-category">Expense category <span class="optional-label">Optional for overall monthly budgets</span></label>
+        <select id="budget-category" class="text-field" formControlName="categoryId">
+          <option value="">All expenses · Monthly only</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}{{ category.status === 'archived' ? ' · Archived' : '' }}</option>
+          }
+        </select>
+        <label class="field-label" for="budget-amount">Limit <span>*</span></label>
+        <div class="loan-currency-field"><span>₹</span><input id="budget-amount" type="text" inputmode="decimal" formControlName="amount" placeholder="0.00" required /></div>
+        <label class="field-label" for="budget-period">Recurring period <span>*</span></label>
+        <select id="budget-period" class="text-field" formControlName="period">
+          <option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="custom">Custom days</option>
+        </select>
+        @if (form.controls.period.value === 'custom') {
+          <label class="field-label" for="budget-days">Period length <span>*</span></label>
+          <div class="budget-days-input"><input id="budget-days" class="text-field" type="number" min="1" max="3660" formControlName="customPeriodDays" /><span>days</span></div>
+        }
+        <fieldset class="budget-threshold-fieldset">
+          <legend class="field-label">Alert thresholds <span class="optional-label">Optional</span></legend>
+          <p>Choose when this budget should record an alert. Selected thresholds are saved once per budget period.</p>
+          <div class="budget-threshold-options">
+            @for (threshold of thresholdOptions; track threshold) {
+              <label [for]="'budget-alert-' + threshold">
+                <input [id]="'budget-alert-' + threshold" type="checkbox" [checked]="form.controls.alertThresholds.value.includes(threshold)" (change)="toggleThreshold(threshold, $event)" />
+                <span>{{ threshold }}%</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+        <div class="form-two-columns">
+          <div><label class="field-label" for="budget-start">Starts on <span>*</span></label><input id="budget-start" class="text-field" type="date" formControlName="startsOn" required /></div>
+          <div><label class="field-label" for="budget-end">Ends on <span class="optional-label">Optional</span></label><input id="budget-end" class="text-field" type="date" formControlName="endsOn" /></div>
+        </div>
+        <div class="account-form-actions"><a class="button button-outline" routerLink="/budgets">Cancel</a><button class="button button-primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : editing() ? 'Save changes' : 'Create budget' }}</button></div>
+      </form>
+    }
+  </div>
+</section>

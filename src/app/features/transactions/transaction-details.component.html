@@ -1,0 +1,75 @@
+<section class="transaction-details-page">
+  <a class="back-link" routerLink="/transactions"><svg lucideArrowLeft aria-hidden="true"></svg>Back to transactions</a>
+
+  @if (loading()) {
+    <div class="transaction-list-empty" role="status">Loading transaction…</div>
+  } @else if (error()) {
+    <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+  } @else if (transaction(); as entry) {
+    <article class="transaction-detail-card">
+      <div class="transaction-detail-top">
+        <div>
+          <p class="eyebrow">{{ typeLabel(entry.type) }}</p>
+          <h1>{{ entry.description }}</h1>
+          <p class="transaction-detail-date">{{ dateLabel(entry.occurredAt) }}</p>
+        </div>
+        <div class="transaction-detail-actions">
+          @if (entry.type === 'income' || entry.type === 'expense') {
+            <a class="button button-outline" [routerLink]="['/transactions', entry.id, 'edit']">
+              <svg lucidePencil aria-hidden="true"></svg>Edit
+            </a>
+          }
+          @if (entry.loanId) {
+            <a class="button button-outline" [routerLink]="['/loans', entry.loanId]">View loan</a>
+          }
+          @if (entry.savingsGoalId) {
+            <a class="button button-outline" [routerLink]="['/savings', entry.savingsGoalId]">View savings goal</a>
+          }
+          @if (!isLoanTransaction(entry.type) && !isSavingsTransaction(entry.type)) {
+            <button class="button button-danger-outline" type="button" (click)="delete()">
+              <svg lucideTrash2 aria-hidden="true"></svg>Delete
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="transaction-detail-amount" [class.transaction-income-amount]="entry.type === 'income'" [class.transaction-expense-amount]="entry.type === 'expense'">
+        {{ amountLabel(entry) }}
+      </div>
+
+      <div class="transaction-detail-fields">
+        @if (entry.type === 'transfer') {
+          <div><span>From account</span><strong>{{ accountName(entry.fromAccountId) }}</strong></div>
+          <div><span>To account</span><strong>{{ accountName(entry.toAccountId) }}</strong></div>
+          <div><span>Accounting</span><strong>Internal transfer — not income or expense</strong></div>
+        } @else if (isLoanTransaction(entry.type)) {
+          <div><span>Account</span><strong>{{ accountName(entry.accountId) }}</strong></div>
+          <div><span>Accounting</span><strong>Loan activity — not regular income or expenditure</strong></div>
+        } @else if (isSavingsTransaction(entry.type)) {
+          <div><span>Account</span><strong>{{ accountName(entry.accountId) }}</strong></div>
+          <div><span>Accounting</span><strong>Savings allocation — not regular income or expenditure</strong></div>
+        } @else {
+          <div><span>Account</span><strong>{{ accountName(entry.accountId) }}</strong></div>
+          <div><span>Category</span><strong>{{ category()?.name ?? 'Unavailable category' }}</strong></div>
+        }
+        @if (entry.paymentMethod) {
+          <div><span>Payment method</span><strong>{{ paymentLabel(entry.paymentMethod) }}</strong></div>
+        }
+      </div>
+
+      @if (entry.notes) {
+        <section class="transaction-notes-block">
+          <h2>Notes</h2>
+          <p>{{ entry.notes }}</p>
+        </section>
+      }
+      @if (entry.tags?.length) {
+        <section class="transaction-tags-block">
+          <h2>Tags</h2>
+          <div>@for (tag of entry.tags; track tag) { <span>{{ tag }}</span> }</div>
+        </section>
+      }
+      <p class="transaction-record-meta">Recorded {{ dateLabel(entry.createdAt) }} · Last updated {{ dateLabel(entry.updatedAt) }}</p>
+    </article>
+  }
+</section>

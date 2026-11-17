@@ -1,0 +1,291 @@
+@if (loading()) {
+  <div class="dashboard-loading" role="status">Loading your financial overview…</div>
+} @else if (error()) {
+  <div class="dashboard-error" role="alert">
+    <div>
+      <strong>Dashboard unavailable</strong>
+      <p>{{ error() }}</p>
+    </div>
+    <button class="button button-outline" type="button" (click)="loadDashboard()">Try again</button>
+  </div>
+} @else {
+  <section class="dashboard-page">
+    <header class="dashboard-heading">
+      <div>
+        <p class="eyebrow">YOUR FINANCES</p>
+        <h1>Your money, at a glance</h1>
+        <p class="dashboard-date">A clear view of your finances · {{ todayLabel }}</p>
+      </div>
+      <div class="dashboard-actions">
+        <a class="button button-outline" routerLink="/accounts">
+          <svg lucideWallet aria-hidden="true"></svg>
+          Accounts
+        </a>
+        <a class="button button-primary" routerLink="/transactions/quick">
+          <svg lucidePlus aria-hidden="true"></svg>
+          Add transaction
+        </a>
+      </div>
+    </header>
+
+    <section class="dashboard-overview-grid" aria-label="Available balance">
+      <article class="balance-overview-card">
+        <div class="balance-overview-top">
+          <span>TOTAL AVAILABLE BALANCE</span>
+          <span class="balance-overview-icon"><svg lucideWallet aria-hidden="true"></svg></span>
+        </div>
+        <strong class="balance-overview-value">{{ formatMoney(availableBalancePaise()) }}</strong>
+        @if (activeAccountCount() > 0) {
+          <p>Across {{ activeAccountCount() }} active {{ activeAccountCount() === 1 ? 'account' : 'accounts' }}</p>
+        } @else {
+          <p>Add an account to see your available balance.</p>
+        }
+        <a class="balance-overview-link" routerLink="/accounts">
+          View account balances <svg lucideArrowRight aria-hidden="true"></svg>
+        </a>
+      </article>
+
+      <div class="dashboard-metrics-grid" aria-label="Monthly and loan summary">
+        <article class="dashboard-metric-card">
+          <div class="dashboard-metric-label"><span class="metric-icon metric-income"><svg lucideArrowDownRight aria-hidden="true"></svg></span>Income this month</div>
+          <strong>{{ formatMoney(monthlyIncomePaise()) }}</strong>
+          <span class="dashboard-metric-note">{{ monthLabel }}</span>
+        </article>
+        <article class="dashboard-metric-card">
+          <div class="dashboard-metric-label"><span class="metric-icon metric-expense"><svg lucideArrowUpRight aria-hidden="true"></svg></span>Spent this month</div>
+          <strong>{{ formatMoney(monthlyExpensePaise()) }}</strong>
+          <span class="dashboard-metric-note">{{ monthLabel }}</span>
+        </article>
+        <article class="dashboard-metric-card">
+          <div class="dashboard-metric-label"><span class="metric-icon metric-loans"><svg lucideArrowLeftRight aria-hidden="true"></svg></span>Outstanding loans</div>
+          <strong>{{ formatMoney(outstandingLoans().outstandingPaise) }}</strong>
+          <span class="dashboard-metric-note">
+            @if (outstandingLoans().needsReviewCount > 0) {
+              {{ outstandingLoans().needsReviewCount }} legacy {{ outstandingLoans().needsReviewCount === 1 ? 'record needs' : 'records need' }} review
+            } @else {
+              {{ outstandingLoans().outstandingCount }} {{ outstandingLoans().outstandingCount === 1 ? 'loan' : 'loans' }} with a balance
+            }
+          </span>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-insights-grid" aria-label="Spending and income insights">
+      <article class="dashboard-panel weekly-panel">
+        <div class="dashboard-panel-heading">
+          <div>
+            <h2>Weekly expenditure</h2>
+            <p>Daily spending, Monday to Sunday</p>
+          </div>
+          <a class="dashboard-panel-link" routerLink="/reports" aria-label="View expenditure reports">Reports</a>
+        </div>
+        <div class="weekly-chart" role="list" aria-label="Daily expenses for the current week">
+          @for (day of weeklySpending(); track day.date) {
+            <div class="weekly-chart-column" role="listitem" [attr.aria-label]="day.label + ': ' + formatMoney(day.amountPaise)" [attr.title]="day.label + ': ' + formatMoney(day.amountPaise)">
+              <span class="weekly-chart-track">
+                <span class="weekly-chart-bar" [style.height.%]="weekBarHeight(day.amountPaise)"></span>
+              </span>
+              <span class="weekly-chart-day">{{ day.label }}</span>
+            </div>
+          }
+        </div>
+        @if (!hasWeeklySpending()) {
+          <p class="chart-empty-note">No expenditure recorded this week.</p>
+        } @else {
+          <div class="weekly-chart-legend"><span></span>Daily expenses · {{ formatMoney(weeklyTotalPaise()) }} total</div>
+        }
+      </article>
+
+      <article class="dashboard-panel comparison-panel">
+        <div class="dashboard-panel-heading">
+          <div>
+            <h2>Income vs expenditure</h2>
+            <p>{{ monthLabel }}</p>
+          </div>
+          <span class="insight-icon"><svg lucideArrowLeftRight aria-hidden="true"></svg></span>
+        </div>
+        <div class="comparison-rows">
+          <div class="comparison-row">
+            <div class="comparison-label"><span class="comparison-dot comparison-income"></span><span>Income</span><strong>{{ formatMoney(monthlyIncomePaise()) }}</strong></div>
+            <div class="comparison-track"><span class="comparison-fill comparison-income-fill" [style.width.%]="comparisonWidth(monthlyIncomePaise())"></span></div>
+          </div>
+          <div class="comparison-row">
+            <div class="comparison-label"><span class="comparison-dot comparison-expense"></span><span>Expenditure</span><strong>{{ formatMoney(monthlyExpensePaise()) }}</strong></div>
+            <div class="comparison-track"><span class="comparison-fill comparison-expense-fill" [style.width.%]="comparisonWidth(monthlyExpensePaise())"></span></div>
+          </div>
+        </div>
+        @if (monthlyIncomePaise() === 0 && monthlyExpensePaise() === 0) {
+          <p class="chart-empty-note">Your monthly comparison will appear as you add transactions.</p>
+        }
+      </article>
+    </section>
+
+    <section class="dashboard-planning-grid" aria-label="Budgets and savings goals">
+      <article class="dashboard-panel planning-panel">
+        <div class="dashboard-panel-heading">
+          <div><h2>Budget progress</h2><p>Current recurring periods</p></div>
+          <a class="dashboard-panel-link" routerLink="/budgets">All budgets</a>
+        </div>
+        @if (currentBudgets().length) {
+          <div class="planning-preview-list">
+            @for (summary of currentBudgets(); track summary.budget.id) {
+              <a class="planning-preview-row" [routerLink]="['/budgets']">
+                <span class="planning-preview-copy">
+                  <strong>{{ summary.budget.name }}</strong>
+                  <small>{{ formatMoney(summary.spentPaise) }} spent of {{ formatMoney(summary.budget.amountPaise) }}</small>
+                  <span class="planning-preview-track"><span [style.width.%]="summary.percentUsed > 100 ? 100 : summary.percentUsed" [class.planning-over]="summary.percentUsed >= 100"></span></span>
+                </span>
+                <span class="planning-preview-meta">{{ summary.percentUsed | number:'1.0-0' }}%@if (summary.alerts.length) { <small>{{ summary.alerts.length }} alert{{ summary.alerts.length === 1 ? '' : 's' }}</small> }</span>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="dashboard-empty-state compact-empty-state"><strong>No active budgets</strong><p>Create a budget to keep spending goals visible here.</p><a class="dashboard-panel-link" routerLink="/budgets/new">Create a budget</a></div>
+        }
+      </article>
+      <article class="dashboard-panel planning-panel">
+        <div class="dashboard-panel-heading">
+          <div><h2>Savings goals</h2><p>Progress from tracked contributions</p></div>
+          <a class="dashboard-panel-link" routerLink="/savings">All goals</a>
+        </div>
+        @if (currentSavingsGoals().length) {
+          <div class="savings-dashboard-summary">
+            <span>{{ formatMoney(savingsSavedPaise()) }} saved of {{ formatMoney(savingsTargetPaise()) }}</span>
+            <span>{{ completedGoalCount() }} completed</span>
+            @if (nextSavingsGoal(); as upcoming) {
+              <span>Next target: {{ upcoming.goal.name }} · {{ formatDate(upcoming.goal.targetDate!) }}</span>
+            }
+          </div>
+        }
+        @if (goalPreviews().length) {
+          <div class="planning-preview-list">
+            @for (item of goalPreviews(); track item.goal.id) {
+              <a class="planning-preview-row" [routerLink]="['/savings', item.goal.id]">
+                <span class="planning-preview-copy">
+                  <strong>{{ item.goal.name }}</strong>
+                  <small>{{ formatMoney(item.savedPaise) }} saved of {{ formatMoney(item.goal.targetAmountPaise) }}</small>
+                  <span class="planning-preview-track planning-savings-track"><span [style.width.%]="item.percentComplete > 100 ? 100 : item.percentComplete"></span></span>
+                </span>
+                <span class="planning-preview-meta">{{ item.percentComplete | number:'1.0-0' }}%</span>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="dashboard-empty-state compact-empty-state"><strong>No savings goals yet</strong><p>Choose a target and track contributions over time.</p><a class="dashboard-panel-link" routerLink="/savings/new">Create a goal</a></div>
+        }
+      </article>
+    </section>
+
+    <section class="dashboard-lower-grid" aria-label="Account and transaction details">
+      <article class="dashboard-panel recent-panel">
+        <div class="dashboard-panel-heading">
+          <div>
+            <h2>Recent activity</h2>
+            <p>Your latest recorded transactions</p>
+          </div>
+          <a class="dashboard-panel-link" routerLink="/transactions">View all</a>
+        </div>
+        @if (recentTransactions().length > 0) {
+          <div class="recent-transaction-list">
+            @for (transaction of recentTransactions(); track transaction.id) {
+              <a class="recent-transaction-row" [routerLink]="['/transactions', transaction.id]">
+                <span class="recent-transaction-icon" [class.recent-income-icon]="transaction.type === 'income'" [class.recent-expense-icon]="transaction.type === 'expense'">
+                  @if (transaction.type === 'income') {
+                    <svg lucideArrowDownRight aria-hidden="true"></svg>
+                  } @else if (transaction.type === 'expense') {
+                    <svg lucideArrowUpRight aria-hidden="true"></svg>
+                  } @else {
+                    <svg lucideArrowLeftRight aria-hidden="true"></svg>
+                  }
+                </span>
+                <span class="recent-transaction-copy">
+                  <strong>{{ transaction.description }}</strong>
+                  <small>{{ transactionTypeLabel(transaction.type) }} · {{ accountName(transaction) }}</small>
+                </span>
+                <span class="recent-transaction-amount" [class.recent-income-amount]="transaction.type === 'income'" [class.recent-expense-amount]="transaction.type === 'expense'">
+                  {{ transactionAmount(transaction) }}
+                </span>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="dashboard-empty-state">
+            <span class="dashboard-empty-icon"><svg lucideArrowLeftRight aria-hidden="true"></svg></span>
+            <strong>No activity yet</strong>
+            <p>Transactions you record will appear here.</p>
+            <a class="dashboard-panel-link" routerLink="/transactions/quick">Add your first transaction</a>
+          </div>
+        }
+      </article>
+
+      <article class="dashboard-panel category-panel">
+        <div class="dashboard-panel-heading">
+          <div>
+            <h2>Spending categories</h2>
+            <p>Where your money went this month</p>
+          </div>
+          <span class="insight-icon"><svg lucideArrowUpRight aria-hidden="true"></svg></span>
+        </div>
+        @if (categorySpending().length > 0) {
+          <div class="category-spending-list">
+            @for (category of categorySpending(); track category.id) {
+              <div class="category-spending-row">
+                <div class="category-spending-copy">
+                  <strong>{{ category.name }}</strong>
+                  <span>{{ category.sharePercent | number:'1.0-0' }}%</span>
+                  <b>{{ formatMoney(category.amountPaise) }}</b>
+                </div>
+                <div class="category-spending-track">
+                  <span [style.width.%]="category.sharePercent"></span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="dashboard-empty-state compact-empty-state">
+            <strong>No spending recorded</strong>
+            <p>Your category breakdown will appear here.</p>
+          </div>
+        }
+      </article>
+
+      <article class="dashboard-panel accounts-panel">
+        <div class="dashboard-panel-heading">
+          <div>
+            <h2>Your accounts</h2>
+            <p>Balances across this device</p>
+          </div>
+          <a class="dashboard-icon-link" routerLink="/accounts" aria-label="View accounts">
+            <svg lucideArrowRight aria-hidden="true"></svg>
+          </a>
+        </div>
+        @if (accounts().length > 0) {
+          <div class="dashboard-account-list">
+            @for (item of accounts(); track item.account.id) {
+              <a class="dashboard-account-row" [routerLink]="['/accounts', item.account.id]">
+                <span class="dashboard-account-icon">
+                  @if (item.account.type === 'cash-wallet' || item.account.type === 'digital-wallet') {
+                    <svg lucideWallet aria-hidden="true"></svg>
+                  } @else {
+                    <svg lucideLandmark aria-hidden="true"></svg>
+                  }
+                </span>
+                <span class="dashboard-account-copy">
+                  <strong>{{ item.account.name }}</strong>
+                  <small>{{ accountTypeLabel(item.account.type) }}{{ item.account.status === 'archived' ? ' · Archived' : '' }}</small>
+                </span>
+                <strong class="dashboard-account-balance">{{ formatMoney(item.currentBalancePaise) }}</strong>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="dashboard-empty-state compact-empty-state">
+            <strong>No accounts added</strong>
+            <p>Add a bank, cash or wallet account to get started.</p>
+            <a class="dashboard-panel-link" routerLink="/accounts">Add an account</a>
+          </div>
+        }
+      </article>
+    </section>
+  </section>
+}

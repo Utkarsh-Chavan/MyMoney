@@ -1,0 +1,84 @@
+<section class="categories-page">
+  <a class="back-link" routerLink="/transactions"><svg lucideArrowLeft aria-hidden="true"></svg>Back to transactions</a>
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">KEEP IT ORGANIZED</p>
+      <h1>Categories</h1>
+      <p class="page-subtitle">Use separate categories for income and expenses.</p>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="account-alert account-alert-error" role="alert">{{ error() }}</div>
+  }
+
+  <div class="category-management-grid">
+    <form class="category-form-card" (ngSubmit)="save()">
+      <p class="eyebrow">{{ editingId() ? 'EDIT CATEGORY' : 'CUSTOM CATEGORY' }}</p>
+      <h2>{{ editingId() ? 'Update category' : 'Create a category' }}</h2>
+      <p class="category-form-help">Default categories are included for both income and expenses.</p>
+
+      <label class="field-label" for="category-name">Category name <span>*</span></label>
+      <input id="category-name" class="text-field" name="name" [(ngModel)]="name" maxlength="50" placeholder="e.g. Pet care" required />
+
+      <label class="field-label" for="category-type">Used for <span>*</span></label>
+      <select id="category-type" class="text-field" name="appliesTo" [(ngModel)]="appliesTo" [disabled]="editingId() !== null" required>
+        <option value="expense">Expense</option>
+        <option value="income">Income</option>
+      </select>
+
+      <div class="account-form-actions">
+        @if (editingId()) {
+          <button class="button button-outline" type="button" (click)="cancelEdit()">Cancel</button>
+        }
+        <button class="button button-primary" type="submit" [disabled]="saving()">
+          @if (editingId()) {
+            <svg lucidePencil aria-hidden="true"></svg>
+          } @else {
+            <svg lucidePlus aria-hidden="true"></svg>
+          }
+          {{ saving() ? 'Saving…' : editingId() ? 'Save changes' : 'Add category' }}
+        </button>
+      </div>
+    </form>
+
+    <section class="category-list-card">
+      <div class="category-list-heading">
+        <div>
+          <h2>{{ status() === 'active' ? 'Available categories' : 'Archived categories' }}</h2>
+          <p>Archived categories stay attached to existing transactions.</p>
+        </div>
+        <div class="account-tabs" aria-label="Category status filter">
+          <button type="button" [class.selected]="status() === 'active'" (click)="setStatus('active')">Active</button>
+          <button type="button" [class.selected]="status() === 'archived'" (click)="setStatus('archived')">Archived</button>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="category-empty" role="status">Loading categories…</div>
+      } @else if (visibleCategories().length === 0) {
+        <div class="category-empty">No archived categories.</div>
+      } @else {
+        <div class="category-list">
+          @for (category of visibleCategories(); track category.id) {
+            <article class="category-row">
+              <span class="category-type-dot" [class.category-income-dot]="category.appliesTo === 'income'"></span>
+              <div class="category-row-copy">
+                <strong>{{ category.name }}</strong>
+                <span>{{ category.appliesTo === 'income' ? 'Income' : 'Expense' }} · {{ category.isDefault ? 'Default' : 'Custom' }}</span>
+              </div>
+              @if (!category.isDefault && category.status === 'active') {
+                <button class="account-icon-button" type="button" [attr.aria-label]="'Edit ' + category.name" (click)="startEdit(category)">
+                  <svg lucidePencil aria-hidden="true"></svg>
+                </button>
+                <button class="account-icon-button category-archive-button" type="button" [attr.aria-label]="'Archive ' + category.name" (click)="archive(category)">
+                  <svg lucideArchive aria-hidden="true"></svg>
+                </button>
+              }
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</section>
