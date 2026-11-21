@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import stripNetlifyHtmlAnnotation from "./strip-netlify-html-annotation.js";
+import stripNetlifyHtmlAnnotation from "../edge-functions/strip-netlify-html-annotation.js";
 
 const annotation =
   "<!-- This site is hosted on Netlify. Anyone can build and deploy a site\n" +
