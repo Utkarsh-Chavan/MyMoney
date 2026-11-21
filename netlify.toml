@@ -1,0 +1,12 @@
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[edge_functions]]
+  function = "strip-netlify-html-annotation"
+  path = "/"
+
+[[edge_functions]]
+  function = "strip-netlify-html-annotation"
+  path = "/index.html"
